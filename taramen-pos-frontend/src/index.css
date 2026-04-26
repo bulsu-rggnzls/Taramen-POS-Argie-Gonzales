@@ -43,6 +43,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-orange: var(--orange);
+  --color-taramen-red: var(--taramen-red);
 }
 
 :root {
@@ -54,8 +55,9 @@
   --popover: oklch(1 0 0);
   --popover-foreground: rgb(10, 10, 10);
   --orange: #FF0605;
-  --emphasis: var(--orange);
-  --primary: var(--orange);
+  --taramen-red: #7E0101;
+  --emphasis: var(--taramen-red);
+  --primary: var(--taramen-red);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
