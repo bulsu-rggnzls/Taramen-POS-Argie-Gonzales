@@ -35,7 +35,7 @@ export default function Login() {
       {
          icon: ShieldCheck,
          title: "Secure access",
-         description: "Quick sign-in with protected sessions.",
+         description: "Quick sign-in with protected sessions. ",
       },
       {
          icon: Clock3,

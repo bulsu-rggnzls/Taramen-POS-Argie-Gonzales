@@ -4,10 +4,10 @@ import ProtectedRoute from "./components/custom/ProtectedRoute";
 import Login from "./pages/Login";
 import Logout from "./pages/Logout";
 import Dashboard from "./pages/Dashboard";
-import MenuCategories from "./pages/MenuCategories";
-import MenuItems from "./pages/MenuItems";
+import MenuCategories from "./pages/menu/MenuCategories";
+import MenuItems from "./pages/menu/MenuItems";
 import Staff from "./pages/Staff";
-import TakeOrder from "./pages/TakeOrder";
+import TakeOrder from "./pages/take-order/TakeOrder";
 import {
    DASHBOARD,
    LOGIN,
