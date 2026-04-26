@@ -1,4 +1,4 @@
-import { User, Loader2, ShieldCheck, Clock3, UtensilsCrossed } from "lucide-react";
+import { User, Loader2, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import IButton from "../components/custom/Button";
 import ICard from "../components/custom/Card";
@@ -12,7 +12,6 @@ import { useLogin } from "../hooks/useAuth";
 import useAuthStore from "../stores/useAuthStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import IAlert from "../components/custom/Alert";
-import { Badge } from "../components/ui/badge";
 
 export default function Login() {
    const navigate = useNavigate();
@@ -26,26 +25,9 @@ export default function Login() {
    } = useAuthStore();
 
    const { mutate: login } = useLogin();
-   const highlights = [
-      {
-         icon: UtensilsCrossed,
-         title: "Fast service",
-         description: "Keep orders moving with a focused workflow.",
-      },
-      {
-         icon: ShieldCheck,
-         title: "Secure access",
-         description: "Quick sign-in with protected sessions. ",
-      },
-      {
-         icon: Clock3,
-         title: "Clear pacing",
-         description: "Stay aligned on tables and timing.",
-      },
-   ];
 
    const onSubmit = async (data) => {
-      clearError(); // Clear any previous errors
+      clearError();
       login(data, {
          onSuccess: () => {
             navigate("/dashboard", { replace: true });
@@ -55,108 +37,70 @@ export default function Login() {
 
    return (
       <LoginLayout>
-         <main className="w-full max-w-none mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
-            <section className="order-2 md:order-1 text-white space-y-7 md:space-y-9">
-               <header className="flex flex-col items-start gap-4">
-                  <Badge className="bg-white/15 text-white border border-white/20 px-3 py-1 text-sm tracking-wide">
-                     Ta'ramen POS
-                  </Badge>
-                  <Title size="3xl" className="text-white leading-tight sm:text-4xl md:text-4xl">
-                     Welcome back. Let&apos;s keep service moving.
-                  </Title>
-                  <Paragraph size="md" variant="default" className="text-white/75 max-w-xl">
-                     Sign in to manage orders, tables, and your shift with a clean, kitchen-ready flow.
-                  </Paragraph>
-               </header>
-               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {highlights.map((item) => {
-                     const Icon = item.icon;
-                     return (
-                        <li
-                           key={item.title}
-                           className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 md:p-5 backdrop-blur-sm"
-                        >
-                           <div className="rounded-xl bg-white/15 p-2.5">
-                              <Icon className="size-5 md:size-6 text-white" />
-                           </div>
-                           <div className="space-y-1">
-                              <span className="text-base font-semibold">{item.title}</span>
-                              <Paragraph size="sm" variant="default" className="text-white/70">
-                                 {item.description}
-                              </Paragraph>
-                           </div>
-                        </li>
-                     );
-                  })}
-               </ul>
-               <Paragraph size="sm" variant="default" className="text-white/60">
-                  Need access? Contact your manager to add or reset your account.
-               </Paragraph>
-            </section>
-
+         <main className="w-full max-w-lg mx-auto flex items-center justify-center min-h-screen p-6">
             <ICard
                logo={
-                  <div className="flex flex-col items-center">
-                     <div className="rounded-2xl bg-orange/10 border border-orange/20 p-3">
-                        <img 
-                           src="/Taramen.png" 
-                           alt="Ta'ramen POS"
-                           className="h-12 md:h-14 w-auto block"
+                  <div className="mb-4 mt-8">  
+                     <img 
+                        src="/taramen.svg" 
+                        alt="Ta'ramen POS"
+                        className="h-28 w-auto mx-auto block object-contain"
+                     />        
+                  </div>
+               }
+               title="Welcome Back"
+               description="Please enter your details"
+               descriptionClassName="text-gray-400 text-lg font-normal"
+               cardClassName="text-center w-full bg-white border border-white/60 shadow-2xl rounded-3xl"
+               cardContentClassName="pb-8 px-10 pt-6"
+               cardTitleClassName="text-xl text-gray-900 font-bold"
+               cardHeaderClassName="gap-1"
+            >
+               <Form className="flex flex-col" onSubmit={onSubmit} schema={loginSchema}>
+                  <div className="flex flex-col gap-3">
+                     <IInput 
+                        name="email" 
+                        type="email"
+                        placeholder="Enter username..." 
+                        className="bg-white border border-black h-12 text-base px-5 rounded-lg shadow-sm"
+                        wrapperClassName="gap-2"
+                        prefix={<User className="size-5 text-gray-500" />}
+                     />
+                     <div className="space-y-2">
+                        <div className="flex justify-end items-center">
+                           <IButton 
+                              type="button" 
+                              variant="ghost" 
+                              className="text-sm text-taramen-red hover:text-taramen-red/80 p-0 h-auto font-semibold"
+                              onClick={openForgotPasswordModal}
+                           >
+                              Forgot password?
+                           </IButton>
+                        </div>
+                        <IInput
+                           name="password"
+                           type="password"
+                           placeholder="Enter password..."
+                           className="bg-white border border-black h-12 text-base px-5 rounded-lg shadow-sm"
+                           prefix={<Lock className="size-5 text-gray-500" />}
                         />
                      </div>
                   </div>
-               }
-               title="Sign In"
-               description="Enter your credentials to continue."
-               descriptionClassName="text-gray-500 text-sm md:text-base"
-               cardClassName="order-1 md:order-2 text-center w-full bg-white/95 backdrop-blur border border-white/60 shadow-2xl/70 rounded-3xl"
-               cardContentClassName="pb-10 px-8 md:px-10 pt-4"
-               cardTitleClassName="text-2xl md:text-3xl text-gray-900"
-               cardHeaderClassName="gap-3 pt-8 md:pt-10"
-            >
-               <Form className="flex flex-col gap-6 md:gap-7" onSubmit={onSubmit} schema={loginSchema}>
-                  <IInput 
-                     name="email" 
-                     type="email"
-                     label="Email"
-                     placeholder="Enter your email" 
-                     labelClassName="font-semibold text-sm md:text-sm text-gray-700"
-                     className="bg-white/90 border border-gray-200 h-12 md:h-14 text-base md:text-base px-4 md:px-5 rounded-xl shadow-sm"
-                     wrapperClassName="gap-2"
-                     suffix={<User className="size-5 text-gray-500" />}
-                  />
-                  <div className="space-y-2">
-                     <div className="flex justify-between items-center">
-                        <div className="font-semibold text-sm md:text-sm text-gray-700">Password</div>
-                        <IButton 
-                           type="button" 
-                           variant="ghost" 
-                           className="text-sm md:text-sm text-orange hover:text-orange/80 p-0 h-auto font-semibold"
-                           onClick={openForgotPasswordModal}
-                        >
-                           Forgot password?
-                        </IButton>
-                     </div>
-                     <IInput
-                        name="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="bg-white/90 border border-gray-200 h-12 md:h-14 text-base md:text-base px-4 md:px-5 rounded-xl shadow-sm"
-                     />
+                  <div className="mt-12">
+                     <IButton 
+                        type="submit" 
+                        variant="taramenRed" 
+                        className="w-full h-14 text-base tracking-wide flex items-center justify-center gap-2 rounded-lg" 
+                        disabled={isLoading}
+                     >
+                        {isLoading ? (
+                           <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              SIGNING IN...
+                           </>
+                        ) : "Continue"}
+                     </IButton>
                   </div>
-                  <IButton 
-                     type="submit" 
-                     variant="orange" 
-                     className="w-full font-semibold h-12 md:h-14 text-base md:text-base tracking-wide flex items-center justify-center gap-2 rounded-xl" 
-                     disabled={isLoading}
-                  >
-                     {isLoading ? (
-                        <>
-                           <Loader2 className="h-4 w-4 animate-spin" />
-                           SIGNING IN...
-                        </>
-                     ) : "SIGN IN"}
-                  </IButton>
                   {errorMessage && (
                      <div className="pt-2">
                         <IAlert variant="destructive" description={errorMessage} />
