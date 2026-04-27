@@ -65,8 +65,8 @@ const NAV_ITEMS = [
 
 const baseItemClasses =
   "group flex min-h-[52px] w-full items-center gap-3 rounded-lg text-left text-base font-semibold text-gray-600 transition-colors p-0 h-auto xl:min-h-[56px] xl:text-lg";
-const hoverClasses = "hover:bg-orange/10 hover:text-orange";
-const activeClasses = "bg-orange text-white";
+const hoverClasses = "hover:bg-taramen-red/10 hover:text-taramen-red";
+const activeClasses = "bg-taramen-red text-white";
 
 export default function PosSidebar({
   isCollapsed: isCollapsedProp = false,
@@ -182,7 +182,7 @@ export default function PosSidebar({
                         "min-w-0 overflow-hidden size-4 transition-all duration-300",
                         isMenuOpen && "rotate-180",
                         isMenuActive ? "text-white" : "text-gray-400",
-                        !isCollapsed && "group-hover:text-orange",
+                        !isCollapsed && "group-hover:text-taramen-red",
                         isCollapsed ? "opacity-0 w-0" : "opacity-100",
                       )}
                     />
