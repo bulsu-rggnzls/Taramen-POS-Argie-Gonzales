@@ -10,7 +10,6 @@ import LoginLayout from "../layout/LoginLayout";
 import { loginSchema } from "../shared/lib/zod/schema/login";
 import { useLogin } from "../hooks/useAuth";
 import useAuthStore from "../stores/useAuthStore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import IAlert from "../components/custom/Alert";
 
 export default function Login() {
@@ -18,10 +17,7 @@ export default function Login() {
    const { 
       isLoading,
       errorMessage,
-      clearError,
-      openForgotPasswordModal,
-      isForgotPasswordModalOpen,
-      closeForgotPasswordModal
+      clearError
    } = useAuthStore();
 
    const { mutate: login } = useLogin();
@@ -44,7 +40,7 @@ export default function Login() {
                      <img 
                         src="/taramen.svg" 
                         alt="Ta'ramen POS"
-                        className="h-28 w-auto mx-auto block object-contain"
+                        className="h-28 w-auto mx-auto block"
                      />        
                   </div>
                }
@@ -52,45 +48,33 @@ export default function Login() {
                description="Please enter your details"
                descriptionClassName="text-gray-400 text-lg font-normal"
                cardClassName="text-center w-full bg-white border border-white/60 shadow-2xl rounded-3xl"
-               cardContentClassName="pb-8 px-10 pt-6"
+               cardContentClassName="pb-8 px-10 pt-12"
                cardTitleClassName="text-xl text-gray-900 font-bold"
                cardHeaderClassName="gap-1"
             >
                <Form className="flex flex-col" onSubmit={onSubmit} schema={loginSchema}>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-6">
                      <IInput 
                         name="email" 
                         type="email"
                         placeholder="Enter username..." 
-                        className="bg-white border border-black h-12 text-base px-5 rounded-lg shadow-sm"
+                        className="bg-white border border-black h-12 !text-lg !pl-12 rounded-lg shadow-sm placeholder:text-gray-400"
                         wrapperClassName="gap-2"
-                        prefix={<User className="size-5 text-gray-500" />}
+                        prefix={<User className="size-6 text-gray-600" />}
                      />
-                     <div className="space-y-2">
-                        <div className="flex justify-end items-center">
-                           <IButton 
-                              type="button" 
-                              variant="ghost" 
-                              className="text-sm text-taramen-red hover:text-taramen-red/80 p-0 h-auto font-semibold"
-                              onClick={openForgotPasswordModal}
-                           >
-                              Forgot password?
-                           </IButton>
-                        </div>
-                        <IInput
-                           name="password"
-                           type="password"
-                           placeholder="Enter password..."
-                           className="bg-white border border-black h-12 text-base px-5 rounded-lg shadow-sm"
-                           prefix={<Lock className="size-5 text-gray-500" />}
-                        />
-                     </div>
+                     <IInput
+                        name="password"
+                        type="password"
+                        placeholder="Enter password..."
+                        className="bg-white border border-black h-12 !text-lg !pl-12 rounded-lg shadow-sm placeholder:text-gray-400"
+                        prefix={<Lock className="size-6 text-gray-600" />}
+                     />
                   </div>
                   <div className="mt-12">
                      <IButton 
                         type="submit" 
                         variant="taramenRed" 
-                        className="w-full h-14 text-base tracking-wide flex items-center justify-center gap-2 rounded-lg" 
+                        className="w-full h-14 text-base !font-normal tracking-wide flex items-center justify-center gap-2 rounded-lg" 
                         disabled={isLoading}
                      >
                         {isLoading ? (
@@ -110,26 +94,6 @@ export default function Login() {
             </ICard>
          </main>
 
-         <Dialog
-            open={isForgotPasswordModalOpen}
-            onOpenChange={(open) => !open && closeForgotPasswordModal()}
-         >
-            <DialogContent>
-               <DialogHeader>
-                  <Title size="lg" className="text-gray-900">
-                     Forgot Password
-                  </Title>
-                  <Paragraph size="sm" className="text-gray-600">
-                     Please contact the administrator to reset your password.
-                  </Paragraph>
-               </DialogHeader>
-               <div className="flex justify-end">
-                  <IButton onClick={closeForgotPasswordModal} variant="outline">
-                     Close
-                  </IButton>
-               </div>
-            </DialogContent>
-         </Dialog>
       </LoginLayout>
    );
 }
