@@ -16,7 +16,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  extractErrorMessage,
   useCategories,
   useCreateCategory,
   useDeleteCategory,
@@ -24,6 +23,7 @@ import {
 } from "@/hooks/usePosApi";
 import PosLayout from "@/layout/PosLayout";
 import { confirmAction } from "@/shared/helpers/confirmAction";
+import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
 
 const normalizeCategory = (category, index) => ({
   id: category?.id ?? category?.category_id ?? category?.uuid ?? String(index + 1),
