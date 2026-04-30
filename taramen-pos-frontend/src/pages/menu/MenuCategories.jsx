@@ -20,7 +20,7 @@ import {
   useCreateCategory,
   useDeleteCategory,
   useUpdateCategory,
-} from "@/hooks/usePosApi";
+} from "@/queries/menuQueries";
 import PosLayout from "@/layout/PosLayout";
 import { confirmAction } from "@/shared/helpers/confirmAction";
 import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
@@ -141,14 +141,14 @@ export default function MenuCategories() {
       return;
     }
 
-    try {
-      await updateCategory.mutateAsync({
-        categoryId,
-        payload: {
-          name,
-          description: editingDescription.trim() || null,
-        },
-      });
+      try {
+        await updateCategory.mutateAsync({
+          id: categoryId,
+          payload: {
+            name,
+            description: editingDescription.trim() || null,
+          },
+        });
       stopEditing();
       toast.success("Category updated.");
     } catch (requestError) {
@@ -208,7 +208,7 @@ export default function MenuCategories() {
           />
           <IButton
             type="submit"
-            variant="orange"
+            variant="taramenRed"
             showLoading={false}
             disabled={createCategory.isPending}
             className="h-10 rounded-lg px-4 md:col-span-2 xl:col-span-1"
