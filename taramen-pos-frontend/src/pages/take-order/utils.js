@@ -36,6 +36,33 @@ export const toNumberIfPossible = (value) => {
   return Number.isNaN(numeric) ? value : numeric;
 };
 
+export const buildOrderPayload = ({
+  dineType,
+  discountValue,
+  employeeId,
+  orderItems,
+  regularDiscountOptions,
+  tableNumber,
+  noneDiscountOption,
+}) => {
+  const selectedDiscount =
+    regularDiscountOptions.find((option) => option.value === discountValue) ??
+    noneDiscountOption;
+
+  return {
+    employee_id: employeeId ? toNumberIfPossible(employeeId) : null,
+    table_number: dineType === "takeout" ? "takeout" : tableNumber || null,
+    items: orderItems.map((item) => ({
+      menu_item_id: toNumberIfPossible(item.id),
+      quantity: item.qty,
+      discount_id:
+        selectedDiscount.value === "none"
+          ? null
+          : toNumberIfPossible(selectedDiscount.value),
+    })),
+  };
+};
+
 export const formatCurrency = (value) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
