@@ -8,7 +8,7 @@ import Paragraph from "../components/custom/Paragraph";
 import Title from "../components/custom/Title";
 import LoginLayout from "../layout/LoginLayout";
 import { loginSchema } from "../shared/lib/zod/schema/login";
-import { useLogin } from "../hooks/useAuth";
+import { useLoginMutation } from "@/queries/authQueries";
 import useAuthStore from "../stores/useAuthStore";
 import IAlert from "../components/custom/Alert";
 
@@ -20,7 +20,7 @@ export default function Login() {
       clearError
    } = useAuthStore();
 
-   const { mutate: login } = useLogin();
+   const { mutate: login } = useLoginMutation();
 
    const onSubmit = async (data) => {
       clearError();
@@ -47,7 +47,7 @@ export default function Login() {
                title="Welcome Back"
                description="Please enter your details"
                descriptionClassName="text-gray-400 text-lg font-normal"
-               cardClassName="text-center w-full bg-white border border-white/60 shadow-2xl rounded-3xl"
+               cardClassName="text-center w-full bg-white border border-white/60 shadow-2xl rounded-2xl"
                cardContentClassName="pb-8 px-10 pt-12"
                cardTitleClassName="text-xl text-gray-800 font-bold"
                cardHeaderClassName="gap-1"
@@ -74,7 +74,7 @@ export default function Login() {
                      <IButton 
                         type="submit" 
                         variant="taramenRed" 
-                        className="w-full h-14 text-base !font-normal tracking-wide flex items-center justify-center gap-2 rounded-lg" 
+                        className="w-full h-12 text-base !font-normal tracking-wide flex items-center justify-center gap-2 rounded-lg" 
                         disabled={isLoading}
                      >
                         {isLoading ? (
