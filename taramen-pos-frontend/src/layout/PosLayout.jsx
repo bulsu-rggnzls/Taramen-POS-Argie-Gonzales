@@ -1,6 +1,6 @@
 import PosNavbar from "@/components/custom/PosNavbar";
 import PosSidebar from "@/components/custom/PosSidebar";
-import { usePosLayoutState } from "@/hooks/use-pos-layout-state";
+import { usePosLayoutState } from "@/shared/hooks/use-pos-layout-state";
 import Title from "@/components/custom/Title";
 import Paragraph from "@/components/custom/Paragraph";
 
