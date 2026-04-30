@@ -64,7 +64,7 @@ const NAV_ITEMS = [
 ];
 
 const baseItemClasses =
-  "group flex min-h-[52px] w-full items-center gap-3 rounded-lg text-left text-base font-semibold text-gray-600 transition-colors p-0 h-auto xl:min-h-[56px] xl:text-lg";
+  "group flex min-h-[3.25rem] w-full items-center gap-3 rounded-lg text-left text-base font-semibold text-gray-600 transition-colors p-0 h-auto xl:min-h-[3.5rem] xl:text-lg";
 const hoverClasses = "hover:bg-taramen-red/10 hover:text-taramen-red";
 const activeClasses = "bg-taramen-red text-white";
 
@@ -118,8 +118,8 @@ export default function PosSidebar({
   return (
     <aside
       className={cn(
-        "relative flex h-[calc(100vh-72px)] shrink-0 flex-col overflow-hidden border-r border-gray-100 bg-white text-gray-800",
-        isCollapsed ? "w-[84px] lg:w-[92px]" : "w-[228px] xl:w-[280px]",
+        "relative flex h-[calc(100vh-4.5rem)] shrink-0 flex-col overflow-hidden border-r border-gray-100 bg-white text-gray-800",
+        isCollapsed ? "w-[5.25rem] lg:w-[5.75rem]" : "w-[14.25rem] xl:w-[17.5rem]",
         enableWidthTransition &&
           "transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width]",
       )}
@@ -208,7 +208,7 @@ export default function PosSidebar({
                                 className={cn(
                                   baseItemClasses,
                                   itemLayoutClasses,
-                                  "min-h-[46px] text-sm font-medium xl:min-h-[48px] xl:text-base",
+                                  "min-h-[2.875rem] text-sm font-medium xl:min-h-[3rem] xl:text-base",
                                   isChildActive
                                     ? activeClasses
                                     : hoverClasses,
