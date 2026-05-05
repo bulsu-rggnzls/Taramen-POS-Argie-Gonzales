@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             BundleMenuSeeder::class,
             DiscountTypeSeeder::class,
             EmployeeTypeSeeder::class,
+            EmployeeSeeder::class
         ]);
     }
 }
