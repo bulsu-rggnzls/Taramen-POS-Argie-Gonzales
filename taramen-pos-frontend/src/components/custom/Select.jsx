@@ -8,7 +8,7 @@ import {
    SelectTrigger,
    SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
 import { useCallback, useMemo } from "react";
 import { nestedObjParser } from "@/shared/helpers/parser";
