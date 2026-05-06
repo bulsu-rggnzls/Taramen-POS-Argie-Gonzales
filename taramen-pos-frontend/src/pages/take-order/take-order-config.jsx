@@ -15,6 +15,15 @@ export const ITEM_ACCENTS = [
   "from-amber-400 via-yellow-400 to-orange-300",
 ];
 
+export const ITEM_IMAGE_POSITIONS = [
+  "object-center",
+  "object-[50%_42%]",
+  "object-[50%_58%]",
+  "object-[35%_50%]",
+  "object-[65%_50%]",
+  "object-[50%_70%]",
+];
+
 export const ADD_ONS = [
   { id: "extra-cheese", label: "Extra Cheese", price: 1.5 },
   { id: "bacon", label: "Add Bacon", price: 2 },
