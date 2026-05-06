@@ -25,6 +25,7 @@ import {
 import PosLayout from "@/layout/PosLayout";
 import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
 import { getRequestFileUrl } from "@/shared/helpers/getRequestFileUrl";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const MENU_TYPE_OPTIONS = [
   { value: "solo", label: "Solo" },
@@ -110,6 +111,7 @@ export default function MenuItems() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const pictureInputRef = useRef(null);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     return () => {
@@ -159,7 +161,7 @@ export default function MenuItems() {
   );
 
   const filteredMenuItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = debouncedSearchTerm.trim().toLowerCase();
 
     return menuItems.filter((item) => {
       const resolvedCategoryName =
@@ -193,7 +195,7 @@ export default function MenuItems() {
 
       return true;
     });
-  }, [menuItems, searchTerm, categoryFilter, typeFilter, availabilityFilter, categoryMap]);
+  }, [menuItems, debouncedSearchTerm, categoryFilter, typeFilter, availabilityFilter, categoryMap]);
 
   const hasActiveFilters =
     searchTerm.trim() !== "" ||
