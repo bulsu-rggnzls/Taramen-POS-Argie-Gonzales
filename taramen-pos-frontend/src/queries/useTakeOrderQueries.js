@@ -16,7 +16,8 @@ import {
   CATEGORY_ICON_OPTIONS,
   NONE_DISCOUNT_OPTION,
 } from "@/pages/take-order/take-order-config";
-import { toDiscountOption } from "@/pages/take-order/utils";
+import { normalizeBoolean } from "@/api/apiPayloadUtils";
+import { toDiscountOption } from "@/shared/helpers/takeOrder";
 import { queryClient } from "@/shared/lib/query-client";
 
 export const TAKE_ORDER_KEYS = {
@@ -40,15 +41,16 @@ const toCategoryTabs = (categories = []) => [
 ];
 
 const toEmployeeOptions = (employees = []) =>
-  employees.map((employee) => ({
-    value: String(employee.id),
-    label: employee.name,
-  }));
+  employees
+    .filter((employee) => employee?.id != null)
+    .filter((employee) => normalizeBoolean(employee.active, true))
+    .map((employee) => ({
+      value: String(employee.id),
+      label: employee.name?.trim() || `Employee #${employee.id}`,
+    }));
 
 const toDiscountGroups = (discounts = []) => {
-  const discountOptions = discounts
-    .filter((discount) => discount.active)
-    .map(toDiscountOption);
+  const discountOptions = discounts.map(toDiscountOption);
   const regularOptions = discountOptions.filter(
     (option) => !option.category.includes("promo"),
   );
