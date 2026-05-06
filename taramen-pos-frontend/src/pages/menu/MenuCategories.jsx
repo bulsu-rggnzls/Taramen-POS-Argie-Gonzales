@@ -24,6 +24,7 @@ import {
 import PosLayout from "@/layout/PosLayout";
 import { confirmAction } from "@/shared/helpers/confirmAction";
 import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const normalizeCategory = (category, index) => ({
   id: category?.id ?? category?.category_id ?? category?.uuid ?? String(index + 1),
@@ -55,6 +56,7 @@ export default function MenuCategories() {
   const [editingDescription, setEditingDescription] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [itemCountFilter, setItemCountFilter] = useState("all");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const categories = useMemo(
     () => (data ?? []).map((category, index) => normalizeCategory(category, index)),
@@ -71,7 +73,7 @@ export default function MenuCategories() {
   );
 
   const filteredCategories = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = debouncedSearchTerm.trim().toLowerCase();
 
     return categories.filter((category) => {
       const matchesSearch =
@@ -91,7 +93,7 @@ export default function MenuCategories() {
 
       return true;
     });
-  }, [categories, searchTerm, itemCountFilter]);
+  }, [categories, debouncedSearchTerm, itemCountFilter]);
 
   const hasActiveFilters = searchTerm.trim() !== "" || itemCountFilter !== "all";
 
