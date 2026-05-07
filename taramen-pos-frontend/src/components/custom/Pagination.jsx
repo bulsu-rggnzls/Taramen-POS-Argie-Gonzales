@@ -1,124 +1,91 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import ISelect from "./Select";
+import { StepBack, StepForward } from "lucide-react";
+import { usePagination } from "@/shared/hooks/usePagination";
+import { Input } from "@/components/ui/input";
 
-const Pagination = ({
-   currentPage,
-   totalPages,
-   pageSize = 10,
-   totalCount = 1,
-   isLoading = false,
-   onPageChange,
-   onPageSizeChange,
-   showPageSizeSelector = true,
-   className = "",
-   pageSizeOptions = [
-      { value: "10", label: "10" },
-      { value: "25", label: "25" },
-      { value: "50", label: "50" },
-      { value: "100", label: "100" },
-   ],
-}) => {
-   const defaultPageSize = 10;
+export default function Pagination({ currentPage: propCurrentPage, totalPages: propTotalPages, onPageChange }) {
+  const {
+    currentPage,
+    inputPage,
+    totalPages,
+    visiblePages,
+    handlePageClick,
+    handleInputChange,
+    getPageButtonClass,
+    canGoPrev,
+    canGoNext,
+  } = usePagination(propTotalPages, propCurrentPage || 1);
 
-   const handlePageSizeChange = (value) => {
-      const newPageSize = parseInt(value.value);
-      onPageSizeChange?.(newPageSize);
-   };
+  const changePage = (page) => {
+    const nextPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    handlePageClick(nextPage);
 
-   const handlePreviousPage = () => {
-      const newPage = Math.max(1, currentPage - 1);
-      onPageChange?.(newPage);
-   };
+    if (nextPage !== currentPage && typeof onPageChange === 'function') {
+      onPageChange(nextPage);
+    }
+  };
 
-   const handleNextPage = () => {
-      const newPage = Math.min(totalPages, currentPage + 1);
-      onPageChange?.(newPage);
-   };
+  const handleGoToPage = () => {
+    changePage(inputPage);
+  };
 
-   const handlePageClick = (pageNum) => {
-      onPageChange?.(pageNum);
-   };
+  const handleInputKeyDown = (event) => {
+    if (event.key === "Enter") {
+      handleGoToPage();
+    }
+  };
 
-   // if (totalPages <= 1 && pageSize === defaultPageSize) return null;
-
-   return (
-      <div className={`flex items-center justify-between px-4 py-2 border rounded-lg bg-muted/50 ${className}`}>
-         <div className='flex items-center space-x-4'>
-            {showPageSizeSelector && (
-               <div className='flex items-center space-x-2'>
-                  <span className='text-xs text-muted-foreground'>Rows per page:</span>
-                  <ISelect
-                     value={pageSize ? pageSize.toString() : defaultPageSize.toString()}
-                     onValueChange={handlePageSizeChange}
-                     options={pageSizeOptions}
-                     triggerClassName='bg-white'
-                     showAll={false}
-                  />
-               </div>
-            )}
-
-            <div className='text-xs text-muted-foreground'>
-               Showing {totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{" "}
-               {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries
-            </div>
-         </div>
-
-         <div className='flex items-center space-x-2'>
-            {totalPages > 1 && (
-               <>
-                  <Button
-                     variant='outline'
-                     size='sm'
-                     onClick={handlePreviousPage}
-                     disabled={currentPage === 1 || isLoading}
-                  >
-                     <ChevronLeftIcon className='h-4 w-4' />
-                  </Button>
-
-                  <div className='flex items-center space-x-1'>
-                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-
-                        if (totalPages <= 5) {
-                           pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                           pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                           pageNum = totalPages - 4 + i;
-                        } else {
-                           pageNum = currentPage - 2 + i;
-                        }
-
-                        return (
-                           <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum && "outline"}
-                              size='sm'
-                              onClick={() => handlePageClick(pageNum)}
-                              className='size-8 p-0'
-                              disabled={isLoading}
-                           >
-                              {pageNum}
-                           </Button>
-                        );
-                     })}
-                  </div>
-
-                  <Button
-                     variant='outline'
-                     size='sm'
-                     onClick={handleNextPage}
-                     disabled={currentPage === totalPages || isLoading}
-                  >
-                     <ChevronRightIcon className='h-4 w-4' />
-                  </Button>
-               </>
-            )}
-         </div>
+  return (
+    <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-b-xl">
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={() => changePage(currentPage - 1)}
+          className="flex items-center justify-center w-8 h-8 text-gray-700 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50"
+          disabled={!canGoPrev}
+        >
+          <StepBack className="w-4 h-4" />
+        </button>
+        
+        <div className="flex items-center gap-1 justify-center">
+          {visiblePages.map((page, index) => {
+            if (page === '...') {
+              return (
+                <span key={`ellipsis-${index}`} className="w-8 h-8 flex items-center justify-center text-gray-500">
+                  ...
+                </span>
+              );
+            }
+            return (
+              <button 
+                key={page}
+                onClick={() => changePage(page)}
+                className={getPageButtonClass(page)}
+              >
+                {page}
+              </button>
+            );
+          })}
+        </div>
+        
+        <button 
+          onClick={() => changePage(currentPage + 1)}
+          className="flex items-center justify-center w-8 h-8 text-gray-700 bg-white rounded-md hover:bg-gray-50 disabled:opacity-50"
+          disabled={!canGoNext}
+        >
+          <StepForward className="w-4 h-4" />
+        </button>
       </div>
-   );
-};
-
-export default Pagination;
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-700">Go to</span>
+        <Input 
+          type="number" 
+          className="w-16 px-2 py-1 text-sm text-center border border-red-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+          value={inputPage}
+          onChange={handleInputChange}
+          onBlur={handleGoToPage}
+          onKeyDown={handleInputKeyDown}
+        />
+        <span className="text-sm text-gray-700">Page</span>
+      </div>
+    </div>
+  );
+}
