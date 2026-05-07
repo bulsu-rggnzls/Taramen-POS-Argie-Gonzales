@@ -15,7 +15,7 @@ import {
   ALL_CATEGORY_TAB,
   CATEGORY_ICON_OPTIONS,
   NONE_DISCOUNT_OPTION,
-} from "@/pages/take-order/take-order-config";
+} from "@/config/take-order-config";
 import { normalizeBoolean } from "@/api/apiPayloadUtils";
 import { toDiscountOption } from "@/shared/helpers/takeOrder";
 import { queryClient } from "@/shared/lib/query-client";
