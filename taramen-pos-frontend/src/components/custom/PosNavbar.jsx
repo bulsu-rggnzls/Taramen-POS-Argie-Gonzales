@@ -1,12 +1,12 @@
-import { ChevronsLeft, ChevronsRight, LogOut } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
 import IButton from "@/components/custom/Button";
 import Paragraph from "@/components/custom/Paragraph";
 import Title from "@/components/custom/Title";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PosNotificationBar from "@/components/custom/PosNotificationBar";
-import { useLogout } from "@/shared/hooks/useAuth";
 import { confirmAction } from "@/shared/helpers/confirmAction";
+import { useLogout } from "@/shared/hooks/useAuth";
 
 const getInitials = (name = "") =>
   name
@@ -19,15 +19,16 @@ const getInitials = (name = "") =>
     .toUpperCase() || "TA";
 
 export default function PosNavbar({
-  breadcrumbs = [],
   isSidebarCollapsed,
   onToggleSidebar,
+  title,
+  description,
   profileName,
-  profileRole,
   profileAvatar,
   showToggle = true,
 }) {
   const logout = useLogout();
+
   const handleLogout = () => {
     confirmAction(
       "Sign out",
@@ -35,11 +36,10 @@ export default function PosNavbar({
       () => logout(),
     );
   };
-  const currentLabel = breadcrumbs.at(-1)?.label || "Dashboard";
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-20 h-[4.5rem] border-b border-gray-200 bg-white shadow-sm">
-      <div className="flex h-full items-center gap-4 px-4 sm:px-5 lg:px-6">
+    <nav className="flex h-[5.25rem] shrink-0 items-center bg-[#e9e9e9]">
+      <div className="flex h-full w-full items-center gap-4 px-4 sm:px-5 lg:px-6">
         {showToggle ? (
           <IButton
             type="button"
@@ -57,46 +57,43 @@ export default function PosNavbar({
           </IButton>
         ) : null}
 
-        <header className="flex min-w-0 items-center gap-3">
-          <img
-            src="/taramen.svg"
-            alt="Taramen POS"
-            className="h-12 w-auto shrink-0 sm:h-14"
-          />
+        <header className="min-w-0">
+          {title ? (
+            <Title
+              size="2xl"
+              className="truncate text-[1.55rem] font-bold leading-tight text-gray-950"
+            >
+              {title}
+            </Title>
+          ) : null}
+          {description ? (
+            <Paragraph
+              size="sm"
+              className="mt-0.5 truncate text-[0.78rem] leading-tight text-gray-700"
+            >
+              {description}
+            </Paragraph>
+          ) : null}
         </header>
 
         <section className="ml-auto flex items-center gap-3">
           <PosNotificationBar />
 
-          <div className="flex items-center gap-3">
-            <Avatar className="size-10">
-              {profileAvatar ? (
-                <AvatarImage src={profileAvatar} alt={profileName} />
-              ) : null}
-              <AvatarFallback className="bg-orange/10 font-semibold text-orange">
-                {getInitials(profileName)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="hidden min-w-[8.75rem] sm:block">
-              <Title size="sm" className="truncate leading-tight text-gray-900">
-                {profileName}
-              </Title>
-              <Paragraph size="sm" className="truncate uppercase leading-tight text-gray-500">
-                {profileRole}
-              </Paragraph>
-            </div>
-          </div>
-
-          <IButton
+          <button
             type="button"
-            variant="outline"
-            showLoading={false}
-            className="size-10 rounded-full border-gray-200 bg-white text-gray-600 hover:border-orange/30 hover:text-orange"
+            className="flex size-9 items-center justify-center rounded-full bg-[#dc7777] text-white shadow-sm transition-colors hover:bg-[#c85f5f]"
             aria-label="Logout"
             onClick={handleLogout}
           >
-            <LogOut className="size-4" />
-          </IButton>
+            <Avatar className="size-9">
+              {profileAvatar ? (
+                <AvatarImage src={profileAvatar} alt={profileName} />
+              ) : null}
+              <AvatarFallback className="bg-transparent text-xs font-semibold text-white">
+                {getInitials(profileName)}
+              </AvatarFallback>
+            </Avatar>
+          </button>
         </section>
       </div>
     </nav>
