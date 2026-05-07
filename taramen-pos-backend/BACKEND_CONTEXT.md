@@ -130,12 +130,20 @@ Menu items:
 
 Employees:
 
+- `GET /employee-types` returns active employee types
+- `GET /employee-types/all` returns all non-deleted employee types
+- `POST /employee-types`
+- `GET /employee-types/{employee_type}`
+- `PUT|PATCH /employee-types/{employee_type}`
+- `DELETE /employee-types/{employee_type}`
+- `PATCH /employee-types/{id}/toggle-status`
 - `GET /employees` returns active employees only
 - `GET /employees/all` returns all non-deleted employees
 - `POST /employees`
 - `GET /employees/{employee}`
 - `PUT|PATCH /employees/{employee}`
 - `DELETE /employees/{employee}`
+- `PATCH /employees/batch-status`
 - `PATCH /employees/{id}/toggle-status`
 
 Discounts:
@@ -186,8 +194,9 @@ Health:
 - `MenuItem`: soft-deletable; belongs to `Category`; optional image via `FilesUpload`; belongs to many `Discount` through `discount_items`; can be a bundle through `menu_item_components`.
 - `DiscountType`: soft-deletable; has many `Discount`.
 - `Discount`: belongs to `DiscountType`; belongs to many `MenuItem` through `discount_items`.
-- `Employee`: soft-deletable; has `name`, optional profile path, and `active`.
-- `Order`: belongs to `Employee`; has many `OrderItem`; stores generated `order_number`, status, subtotal, total discount, and total amount.
+- `EmployeeType`: soft-deletable; has `name` and `active`; has many `Employee`.
+- `Employee`: soft-deletable; belongs to `EmployeeType`; has `name`, nullable `email`, nullable `contact_number`, optional profile path, and `active`.
+- `Order`: belongs to `Employee` including archived employees through `withTrashed()`; has many `OrderItem`; stores generated `order_number`, status, subtotal, total discount, and total amount.
 - `OrderItem`: belongs to `Order`, `MenuItem`, and optional `Discount`; stores item price/quantity snapshots and discount snapshots.
 - `FilesUpload`: soft-deletable metadata for uploaded files.
 - `EndpointLog`: persisted request log with method, endpoint, status, user, duration, and error info.
@@ -203,7 +212,8 @@ Primary app migrations:
 - `discount_types`: name, soft deletes
 - `discounts`: name, `discount_type_id`, nullable value, active, soft deletes
 - `discount_items`: discount/menu-item pivot
-- `employees`: name, optional profile path, active, soft deletes
+- `employee_types`: name, active, soft deletes
+- `employees`: name, `employee_type_id`, nullable unique email, nullable contact number, optional profile path, active, soft deletes
 - `orders`: order number, employee, table number, subtotal, total discount, total amount, status enum
 - `order_items`: order, menu item, item name, unit price, quantity, subtotal, optional discount snapshot, total
 - `endpoint_logs`: request/audit log table with indexes for created date, status, success flag, user, and path
@@ -214,7 +224,8 @@ Laravel defaults also provide users, password reset tokens, sessions, cache, job
 
 - `AuthService`: validates credentials, creates Sanctum token, deletes current token on logout.
 - `MenuItemService`: lists items with category, bundle components, file data, and temporary image URLs; creates/updates items inside transactions; syncs bundle components; archives/restores/toggles availability.
-- `EmployeeService`: active/all listing, CRUD, profile upload, status toggle.
+- `EmployeeTypeService`: active/all listing, CRUD, status toggle for employee type choices, and delete guard when non-archived employees are assigned.
+- `EmployeeService`: active/all listing with employee type relation, CRUD, profile upload, single status toggle, batch status update.
 - `DiscountService`: CRUD and menu-item pivot attach/sync.
 - `DiscountTypeService`: CRUD for discount type names.
 - `OrderService`: filtered/paginated order listing, transactional order creation, receipt shaping, status updates, delete guard for completed orders, stats.
@@ -227,7 +238,8 @@ Requests live in `app/Http/Requests`.
 - `AuthRequest`: `email`, `password`
 - `CategoryRequest`: name uniqueness on create/update, description/status, optional image
 - `MenuItemRequest`: name, price, category, available, optional image, bundle components
-- `EmployeeRequest`: name, active, optional profile image
+- `EmployeeTypeRequest`: name uniqueness, active flag, and update guard requiring at least one valid employee type field
+- `EmployeeRequest`: name, `employee_type_id`, unique nullable email, nullable contact number, active, optional profile image, and batch `active_employee_ids`; employee updates may keep the current inactive employee type but cannot switch to another inactive employee type
 - `DiscountRequest`: name, `discount_type_id`, value, active, `menu_items_id` array
 - `DiscountTypeRequest`: unique required name
 - `OrderRequest`: order filters, order creation payload, status updates, pagination
@@ -255,6 +267,17 @@ Requests live in `app/Http/Requests`.
 8. The response loads `orderItems` and `employee`.
 
 Order statuses are `pending`, `completed`, and `cancelled`. Completed orders cannot be deleted through `OrderService::deleteOrder`.
+
+## Employee Status Flow
+
+- Employee `active` means currently on shift.
+- Archived/not-employed employees use soft deletes through `DELETE /employees/{employee}`.
+- `GET /employees` returns active/on-shift employees.
+- `GET /employees/all` returns all non-archived employees.
+- `PATCH /employees/batch-status` receives `active_employee_ids`; listed IDs become active and all other non-archived employees become inactive.
+- Inactive employee types cannot be assigned to new or updated employees, but existing employees can keep their current type.
+- Existing employees can update other fields while keeping their current inactive employee type.
+- `DELETE /employee-types/{employee_type}` fails with validation error if any non-archived employee is still assigned to that type.
 
 Current order update behavior:
 
@@ -285,6 +308,7 @@ Current order update behavior:
 - `MenuItemSeeder`
 - `BundleMenuSeeder`
 - `DiscountTypeSeeder`
+- `EmployeeTypeSeeder`
 
 Seeder behavior:
 
@@ -292,6 +316,7 @@ Seeder behavior:
 - Duplicate menu item names are decorated with the category name.
 - `BundleMenuSeeder` creates/restores bundle categories, bundle menu items, and bundle component relations.
 - `DiscountTypeSeeder` seeds `percentage`, `fixed`, and `buy1take1`.
+- `EmployeeTypeSeeder` seeds `Head Chef`, `Assistant Chef`, `Sushi Chef`, `Cashier`, and `Waitress`.
 
 ## Frontend Contract Snapshot
 

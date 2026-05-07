@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             MenuItemSeeder::class,
             BundleMenuSeeder::class,
             DiscountTypeSeeder::class,
+            EmployeeTypeSeeder::class,
+            EmployeeSeeder::class
         ]);
     }
 }

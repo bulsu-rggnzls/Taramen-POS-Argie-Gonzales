@@ -11,13 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employees', function (Blueprint $table) {
+        Schema::create('employee_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->foreignId('employee_type_id')->constrained();
-            $table->string('email')->unique()->nullable();
-            $table->string('contact_number', 30)->nullable();
-            $table->string('profile')->nullable();
+            $table->string('name')->unique();
             $table->boolean('active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employees');
+        Schema::dropIfExists('employee_types');
     }
 };

@@ -29,7 +29,7 @@ class EmployeeController extends Controller
     }
 
     public function store(EmployeeRequest $request){
-        $employee = $this->employeeService->createEmployee($request->validated());
+        $employee = $this->employeeService->createEmployee($request->safe()->except('profile'));
         $employee = $this->employeeService->updateEmployeeProfile($employee, $request->file('profile'));
 
         return ApiResponse::success(
@@ -50,7 +50,7 @@ class EmployeeController extends Controller
 
     public function update(EmployeeRequest $request, string $id){
         $employee = Employee::findOrFail($id);
-        $employee = $this->employeeService->updateEmployee($employee, $request->validated());
+        $employee = $this->employeeService->updateEmployee($employee, $request->safe()->except('profile'));
         $employee = $this->employeeService->updateEmployeeProfile($employee, $request->file('profile'));
 
         return ApiResponse::success(
@@ -66,9 +66,24 @@ class EmployeeController extends Controller
             [
                 'id' => $employee->id,
                 'name' => $employee->name,
+                'employee_type_id' => $employee->employee_type_id,
+                'employee_type' => $employee->employeeType,
+                'email' => $employee->email,
+                'contact_number' => $employee->contact_number,
                 'active' => $employee->active
             ],
             'Employee status toggled successfully'
+        );
+    }
+
+    public function batchStatus(EmployeeRequest $request){
+        $employees = $this->employeeService->batchUpdateStatus(
+            $request->validated('active_employee_ids')
+        );
+
+        return ApiResponse::success(
+            $employees,
+            'Employee statuses updated successfully'
         );
     }
 
