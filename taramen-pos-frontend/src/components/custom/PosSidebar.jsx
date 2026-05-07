@@ -1,15 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   ChevronDown,
   LayoutGrid,
   List,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Menu as MenuIcon,
   ShoppingBag,
   Tag,
-  UtensilsCrossed,
   Users,
 } from "lucide-react";
 
@@ -25,244 +22,193 @@ import {
 
 const NAV_ITEMS = [
   {
-    id: "order",
-    label: "Take Order",
-    icon: ShoppingBag,
-    path: TAKE_ORDER.path,
-  },
-  {
     id: "dashboard",
     label: "Dashboard",
     icon: LayoutGrid,
     path: DASHBOARD.path,
+    match: (pathname) => pathname === DASHBOARD.path,
+  },
+  {
+    id: "order",
+    label: "Take Order",
+    icon: ShoppingBag,
+    path: TAKE_ORDER.path,
+    match: (pathname) => pathname === TAKE_ORDER.path,
   },
   {
     id: "menu",
     label: "Menu",
-    icon: UtensilsCrossed,
+    icon: MenuIcon,
     children: [
-      {
-        id: "category",
-        label: "Category",
-        icon: Tag,
-        path: MENU_CATEGORIES.path,
-      },
       {
         id: "menu-items",
         label: "Menu Items",
         icon: List,
         path: MENU_ITEMS.path,
       },
+      {
+        id: "categories",
+        label: "Categories",
+        icon: Tag,
+        path: MENU_CATEGORIES.path,
+      },
     ],
+    match: (pathname) =>
+      pathname.startsWith(MENU_ITEMS.path) ||
+      pathname.startsWith(MENU_CATEGORIES.path),
   },
   {
     id: "staff",
     label: "Staff",
     icon: Users,
     path: STAFF.path,
+    match: (pathname) => pathname === STAFF.path,
   },
 ];
 
-const baseItemClasses =
-  "group flex min-h-[3.25rem] w-full items-center gap-3 rounded-lg text-left text-base font-semibold text-gray-600 transition-colors p-0 h-auto xl:min-h-[3.5rem] xl:text-lg";
-const hoverClasses = "hover:bg-taramen-red/10 hover:text-taramen-red";
-const activeClasses = "bg-taramen-red text-white";
-
 export default function PosSidebar({
   isCollapsed: isCollapsedProp = false,
-  onRequestExpand,
   onToggleCollapse,
 }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const isCollapsed = Boolean(isCollapsedProp);
   const menuItem = NAV_ITEMS.find((item) => item.children);
-  const menuChildren = menuItem?.children ?? [];
-  const isMenuActive = menuChildren.some((child) =>
-    location.pathname.startsWith(child.path),
-  );
-  const [isMenuOpen, setIsMenuOpen] = useState(isMenuActive);
-  const [enableWidthTransition, setEnableWidthTransition] = useState(false);
-
-  useEffect(() => {
-    if (isMenuActive && !isCollapsed) setIsMenuOpen(true);
-  }, [isMenuActive, isCollapsed]);
-
-  useEffect(() => {
-    if (isCollapsed) setIsMenuOpen(false);
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    const id = setTimeout(() => setEnableWidthTransition(true), 0);
-    return () => clearTimeout(id);
-  }, []);
-
-  const itemLayoutClasses = isCollapsed
-    ? "justify-center gap-0 px-4"
-    : "justify-start px-4 xl:px-6";
-  const menuButtonSizeClasses = isCollapsed
-    ? "!h-auto !py-0 !px-4"
-    : "!h-auto !py-0 !px-4 xl:!px-6";
-  const labelClasses = cn(
-    "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-200",
-    isCollapsed ? "w-0 opacity-0" : "flex-1 opacity-100",
-  );
-  const iconWrapClass = "flex size-6 shrink-0 items-center justify-center";
-  const activeItemClass = activeClasses;
-
-  const handleCollapsedNavigate = (path) => {
-    onRequestExpand?.();
-    navigate(path);
-  };
+  const isMenuActive = menuItem?.match(location.pathname) ?? false;
+  const [isMenuManuallyOpen, setIsMenuManuallyOpen] = useState(false);
+  const isMenuOpen = !isCollapsed && (isMenuActive || isMenuManuallyOpen);
 
   return (
     <aside
       className={cn(
-        "relative flex h-[calc(100vh-4.5rem)] shrink-0 flex-col overflow-hidden border-r border-gray-100 bg-white text-gray-800",
-        isCollapsed ? "w-[5.25rem] lg:w-[5.75rem]" : "w-[14.25rem] xl:w-[17.5rem]",
-        enableWidthTransition &&
-          "transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width]",
+        "flex min-h-screen shrink-0 flex-col bg-sidebar-red px-5 py-7 text-black transition-[width] duration-300 ease-out",
+        isCollapsed ? "w-[6rem]" : "w-[14rem]",
       )}
     >
-      <div className={cn("flex flex-1 flex-col py-5", isCollapsed ? "px-4" : "px-5")}>
-        <div className={cn("flex items-center pb-3", isCollapsed ? "justify-center" : "justify-end")}>
-          <IButton
-            type="button"
-            variant="ghost"
-            showLoading={false}
-            onClick={() => onToggleCollapse?.()}
-            className="size-9 rounded-none border-none bg-transparent text-black shadow-none hover:bg-transparent hover:text-black"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <PanelLeftOpen className="size-6 text-gray-700" />
-            ) : (
-              <PanelLeftClose className="size-6 text-gray-700" />
-            )}
-          </IButton>
-        </div>
-        <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
-          {NAV_ITEMS.map((item) => {
-            if (item.children) {
-              const Icon = item.icon;
-              return (
-                <div key={item.id} className="flex w-full flex-col">
-                  <IButton
-                    type="button"
-                    variant="ghost"
-                    showLoading={false}
-                    aria-expanded={!isCollapsed && isMenuOpen}
-                    aria-controls="pos-menu-group"
-                    onClick={() => {
-                      if (isCollapsed) {
-                        onRequestExpand?.();
-                        setIsMenuOpen(true);
-                        return;
-                      }
-                      setIsMenuOpen((open) => !open);
-                    }}
+      <div className="flex justify-center">
+        <IButton
+          type="button"
+          variant="ghost"
+          showLoading={false}
+          onClick={() => onToggleCollapse?.()}
+          className="size-14 rounded-full bg-transparent p-0 text-black shadow-none hover:bg-white/70"
+          aria-label={isCollapsed ? "Open sidebar" : "Close sidebar"}
+        >
+          <img
+            src="/taramen.svg"
+            alt=""
+            className="h-16 w-16 object-contain"
+            draggable={false}
+          />
+        </IButton>
+      </div>
+
+      <nav className="mt-9 flex flex-col gap-5" aria-label="POS navigation">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.match(location.pathname);
+
+          if (item.children) {
+            return (
+              <div key={item.id} className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isCollapsed) {
+                      onToggleCollapse?.();
+                      setIsMenuManuallyOpen(true);
+                      return;
+                    }
+                    setIsMenuManuallyOpen((open) => !open);
+                  }}
+                  className={cn(
+                    "group flex h-12 w-full items-center rounded-md text-sm font-semibold transition-colors",
+                    isCollapsed ? "justify-center px-0" : "gap-4 px-4",
+                    isActive
+                      ? "bg-taramen-red text-white"
+                      : "text-black hover:bg-white hover:text-taramen-red",
+                  )}
+                  aria-expanded={!isCollapsed && isMenuOpen}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <span className="flex size-5 shrink-0 items-center justify-center">
+                    <Icon className="size-5" strokeWidth={1.8} />
+                  </span>
+                  <span
                     className={cn(
-                      "relative",
-                      baseItemClasses,
-                      itemLayoutClasses,
-                      menuButtonSizeClasses,
-                      isMenuActive
-                        ? activeItemClass
-                        : isCollapsed
-                          ? ""
-                          : hoverClasses,
+                      "min-w-0 flex-1 overflow-hidden whitespace-nowrap text-left transition-[opacity,width] duration-200",
+                      isCollapsed ? "hidden" : "w-auto opacity-100",
                     )}
                   >
-                    <span className={iconWrapClass}>
-                      <Icon className="size-6" />
-                    </span>
-                    <span className={labelClasses}>{item.label}</span>
-                    <ChevronDown
-                      className={cn(
-                        "min-w-0 overflow-hidden size-4 transition-all duration-300",
-                        isMenuOpen && "rotate-180",
-                        isMenuActive ? "text-white" : "text-gray-400",
-                        !isCollapsed && "group-hover:text-taramen-red",
-                        isCollapsed ? "opacity-0 w-0" : "opacity-100",
-                      )}
-                    />
-                  </IButton>
-                  <AnimatePresence initial={false}>
-                    {!isCollapsed && isMenuOpen ? (
-                      <motion.div
-                        id="pos-menu-group"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-2 flex flex-col gap-1 pl-6">
-                          {item.children.map((child) => {
-                            const isChildActive = location.pathname.startsWith(child.path);
-                            const ChildIcon = child.icon;
-                            return (
-                              <Link
-                                key={child.id}
-                                to={child.path}
-                                className={cn(
-                                  baseItemClasses,
-                                  itemLayoutClasses,
-                                  "min-h-[2.875rem] text-sm font-medium xl:min-h-[3rem] xl:text-base",
-                                  isChildActive
-                                    ? activeClasses
-                                    : hoverClasses,
-                                )}
-                              >
-                                <span className="flex size-4 shrink-0 items-center justify-center">
-                                  <ChildIcon className="size-5" />
-                                </span>
-                                <span className={labelClasses}>
-                                  {child.label}
-                                </span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </div>
-              );
-            }
-
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <div key={item.id} className="flex">
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "relative",
-                    baseItemClasses,
-                    itemLayoutClasses,
-                    isActive
-                      ? activeItemClass
-                      : isCollapsed
-                        ? ""
-                        : hoverClasses,
-                  )}
-                  onClick={(event) => {
-                    if (!isCollapsed) return;
-                    event.preventDefault();
-                    handleCollapsedNavigate(item.path);
-                  }}
-                >
-                  <span className={iconWrapClass}>
-                    <Icon className="size-6" />
+                    {item.label}
                   </span>
-                  <span className={labelClasses}>{item.label}</span>
-                </Link>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 shrink-0 transition-all duration-200",
+                      isMenuOpen && "rotate-180",
+                      isCollapsed ? "hidden" : "opacity-100",
+                    )}
+                    strokeWidth={1.8}
+                  />
+                </button>
+
+                {!isCollapsed && isMenuOpen ? (
+                  <div className="flex flex-col gap-2 pl-4">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isChildActive = location.pathname.startsWith(child.path);
+
+                      return (
+                        <Link
+                          key={child.id}
+                          to={child.path}
+                          className={cn(
+                            "flex h-12 items-center gap-4 rounded-md px-4 text-sm font-semibold transition-colors",
+                            isChildActive
+                              ? "bg-taramen-red text-white"
+                              : "text-black hover:bg-white hover:text-taramen-red",
+                          )}
+                        >
+                          <span className="flex size-5 shrink-0 items-center justify-center">
+                            <ChildIcon className="size-5" strokeWidth={1.8} />
+                          </span>
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
             );
-          })}
-        </div>
-      </div>
+          }
+
+          return (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={cn(
+                "group flex h-12 w-full items-center rounded-md text-sm font-semibold transition-colors",
+                isCollapsed ? "justify-center px-0" : "gap-4 px-4",
+                isActive
+                  ? "bg-taramen-red text-white"
+                  : "text-black hover:bg-white hover:text-taramen-red",
+              )}
+              title={isCollapsed ? item.label : undefined}
+            >
+              <span className="flex size-5 shrink-0 items-center justify-center">
+                <Icon className="size-5" strokeWidth={1.8} />
+              </span>
+              <span
+                className={cn(
+                  "overflow-hidden whitespace-nowrap transition-[opacity,width] duration-200",
+                  isCollapsed ? "hidden" : "w-auto opacity-100",
+                )}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
     </aside>
   );
 }

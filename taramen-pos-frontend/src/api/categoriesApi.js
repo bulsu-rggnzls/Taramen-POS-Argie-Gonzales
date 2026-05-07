@@ -1,5 +1,5 @@
 import apiClient from "@/api/client";
-import { getArrayFromPayload } from "./utils";
+import { getArrayFromPayload } from "./apiPayloadUtils";
 
 export const categoryQueryKeys = {
   categories: ["categories"],
