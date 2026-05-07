@@ -5,67 +5,23 @@ import { takeOrderNumberSchema } from "@/shared/lib/zod/schema/take-order";
 
 const NONE_DISCOUNT_VALUE = "none";
 
-const getDiscountType = (discount) => {
-  const resolvedType =
-    discount.type ??
-    discount.discount_type ??
-    discount.discountType?.name ??
-    discount.discount_type_name ??
-    "";
+const getRawValue = (source, keys) => {
+  for (const key of keys) {
+    if (source?.[key] !== undefined) return source[key];
+  }
 
-  return String(resolvedType).toLowerCase();
+  return "";
 };
 
-const getDiscountCategory = (discount) =>
-  String(discount.category ?? discount.discount_category ?? "").toLowerCase();
+const normalizeList = (items) => {
+  if (!Array.isArray(items)) return [];
 
-const getDiscountMenuItemIds = (discount) => {
-  const menuItems = discount.menu_items_id ?? discount.menuItems ?? [];
-
-  if (!Array.isArray(menuItems)) return [];
-
-  return menuItems
-    .map((menuItem) =>
-      typeof menuItem === "object" && menuItem !== null ? menuItem.id : menuItem,
+  return items
+    .map((item) =>
+      typeof item === "object" && item !== null ? item.id : item,
     )
-    .filter((menuItemId) => menuItemId != null && menuItemId !== "");
-};
-
-export const getDiscountLabel = (discount) => {
-  const value = Number(discount.value) || 0;
-  const discountType = getDiscountType(discount);
-
-  if (discountType.includes("percent")) {
-    const percentValue = value > 1 ? value : value * 100;
-    return `${discount.name} (${percentValue}%)`;
-  }
-
-  return `${discount.name} (-$${value.toFixed(2)})`;
-};
-
-export const toDiscountOption = (discount) => ({
-  value: String(discount.id),
-  label: getDiscountLabel(discount),
-  type: getDiscountType(discount),
-  amountValue: Number(discount.value) || 0,
-  name: discount.name,
-  category: getDiscountCategory(discount),
-  menuItemsId: getDiscountMenuItemIds(discount),
-});
-
-export const calculateDiscountAmount = (subtotal, option) => {
-  if (!option || option.value === NONE_DISCOUNT_VALUE) return 0;
-
-  const numericValue = Number(option.amountValue) || 0;
-
-  if (option.type.includes("percent")) {
-    const rate = numericValue > 1 ? numericValue / 100 : numericValue;
-    const result = subtotal * rate;
-    return Math.round(result * 100) / 100; // Rounds to 2 decimal places
-  }
-
-  const result = numericValue;
-  return Math.round(result * 100) / 100; // Rounds to 2 decimal places
+    .filter((item) => item != null && item !== "")
+    .map(String);
 };
 
 export const toNumberIfPossible = (value) => {
@@ -73,17 +29,39 @@ export const toNumberIfPossible = (value) => {
   return parsedValue.success ? parsedValue.data : value;
 };
 
-const toOrderDate = (value) => {
-  if (!value) return null;
+export const toDiscountOption = (discount) => {
+  const type = String(
+    getRawValue(discount, ["type", "discount_type", "discount_type_name"]) ||
+      discount.discountType?.name,
+  ).toLowerCase();
+  const value = Number(discount.value) || 0;
+  const label = type.includes("percent")
+    ? `${discount.name} (${value > 1 ? value : value * 100}%)`
+    : `${discount.name} (-$${value.toFixed(2)})`;
 
-  const parsedDate =
-    value instanceof Date
-      ? value
-      : typeof value === "string"
-        ? parseISO(value)
-        : new Date(value);
+  return {
+    value: String(discount.id),
+    label,
+    type,
+    amountValue: value,
+    name: discount.name,
+    category: String(
+      discount.category ?? discount.discount_category ?? "",
+    ).toLowerCase(),
+    menuItemsId: normalizeList(discount.menu_items_id ?? discount.menuItems),
+  };
+};
 
-  return isValid(parsedDate) ? parsedDate : null;
+export const calculateDiscountAmount = (subtotal, option) => {
+  if (!option || option.value === NONE_DISCOUNT_VALUE) return 0;
+
+  const value = Number(option.amountValue) || 0;
+  const isPercentDiscount = option.type.includes("percent");
+  const result = isPercentDiscount
+    ? subtotal * (value > 1 ? value / 100 : value)
+    : value;
+
+  return Math.round(result * 100) / 100;
 };
 
 export const buildOrderPayload = ({
@@ -108,38 +86,41 @@ export const buildOrderPayload = ({
     employee_id: employeeId ? toNumberIfPossible(employeeId) : null,
     table_number: dineType === "takeout" ? "takeout" : tableNumber || null,
     items: orderItems.map((item) => {
-      const menuItemId = toNumberIfPossible(item.id);
+      const menuItemId = String(item.id);
       const appliesPromoDiscount =
         selectedPromoDiscount.value !== NONE_DISCOUNT_VALUE &&
-        selectedPromoDiscount.menuItemsId.includes(String(menuItemId));
+        selectedPromoDiscount.menuItemsId.includes(menuItemId);
       const appliesRegularDiscount =
         selectedRegularDiscount.value !== NONE_DISCOUNT_VALUE &&
-        selectedRegularDiscount.menuItemsId.includes(String(menuItemId));
+        selectedRegularDiscount.menuItemsId.includes(menuItemId);
       const selectedItemDiscount = appliesPromoDiscount
         ? selectedPromoDiscount
         : appliesRegularDiscount
           ? selectedRegularDiscount
-          : noneDiscountOption;
-      const itemPayload = {
-        menu_item_id: menuItemId,
+          : null;
+
+      return {
+        menu_item_id: toNumberIfPossible(menuItemId),
         quantity: item.qty,
+        ...(selectedItemDiscount && {
+          discount_id: toNumberIfPossible(selectedItemDiscount.value),
+        }),
       };
-
-      if (selectedItemDiscount.value !== NONE_DISCOUNT_VALUE) {
-        itemPayload.discount_id = toNumberIfPossible(selectedItemDiscount.value);
-      }
-
-      return itemPayload;
     }),
   };
 };
 
-export const formatCurrency = (value) =>
-  priceParser(Number(value) || 0);
+export const formatCurrency = (value) => priceParser(Number(value) || 0);
 
 export const formatOrderDateTime = (value, format = "PPp") => {
-  const parsedDate = toOrderDate(value);
-  if (!parsedDate) return "---";
+  const date =
+    value instanceof Date
+      ? value
+      : typeof value === "string"
+        ? parseISO(value)
+        : new Date(value);
 
-  return dateParser(parsedDate.toISOString(), format);
+  if (!isValid(date)) return "---";
+
+  return dateParser(date.toISOString(), format);
 };
