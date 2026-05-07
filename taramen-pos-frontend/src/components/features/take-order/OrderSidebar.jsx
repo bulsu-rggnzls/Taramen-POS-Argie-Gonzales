@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { AlertCircle, Settings, Table2, Trash2, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  Settings,
+  Table2,
+  Trash2,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
@@ -20,7 +26,7 @@ import {
   DEFAULT_DISCOUNT_OPTIONS,
   NONE_DISCOUNT_OPTION,
   TAX_RATE,
-} from "@/pages/take-order/take-order-config";
+} from "@/config/take-order-config";
 import {
   buildOrderPayload,
   calculateDiscountAmount,
@@ -33,6 +39,7 @@ import {
 } from "@/queries/useTakeOrderQueries";
 import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
 import useTakeOrderStore from "@/stores/useTakeOrderStore";
+import OrderSummaryModal from "@/components/features/take-order/modals/OrderSummaryModal";
 
 const selectOrderSidebarState = (state) => ({
   dineType: state.dineType,
@@ -51,6 +58,7 @@ const selectOrderSidebarActions = (state) => ({
 });
 
 export default function OrderSidebar() {
+  const [submittedSummary, setSubmittedSummary] = useState(null);
   const {
     dineType,
     discountValue,
@@ -126,14 +134,20 @@ export default function OrderSidebar() {
     regularDiscountOptions,
   ]);
 
+  const orderId = "#ORD-9082";
+  const hasItems = orderItems.length > 0;
+  const hasEmployees = employeeOptions.length > 0;
+  const isSubmitDisabled = createOrder.isPending;
+  const discountLabel =
+    regularDiscountOptions.find((option) => option.value === discountValue)?.label ??
+    "Regulatory";
+  const promoLabel =
+    promoDiscountOptions.find((option) => option.value === promoDiscountValue)
+      ?.label ?? "Promo";
+
   const onSubmit = useCallback(async () => {
     if (orderItems.length === 0) {
       toast.error("Add at least one item before submitting the order.");
-      return;
-    }
-
-    if (!employeeId) {
-      toast.error("Select an employee before submitting the order.");
       return;
     }
 
@@ -148,41 +162,75 @@ export default function OrderSidebar() {
       tableNumber,
       noneDiscountOption: NONE_DISCOUNT_OPTION,
     });
+    const employeeLabel =
+      employeeOptions.find((option) => option.value === employeeId)?.label ||
+      "No employee selected";
+    const summary = {
+      id: `#ORD-${Date.now().toString().slice(-4)}`,
+      dineType,
+      tableNumber: dineType === "takeout" ? "Takeout" : tableNumber || "Not set",
+      employeeLabel,
+      items: orderItems.map((item) => ({
+        ...item,
+        lineTotal:
+          (item.price +
+            (item.addons?.reduce((sum, addon) => sum + addon.price, 0) ?? 0)) *
+          item.qty,
+      })),
+      discountLabel,
+      promoLabel,
+      totals,
+    };
+
+    if (!employeeId) {
+      setSubmittedSummary(summary);
+      toast.success("Order ready for review.");
+      return;
+    }
 
     try {
-      await createOrder.mutateAsync(payload);
-      clearSubmittedOrder();
+      const response = await createOrder.mutateAsync(payload);
+      setSubmittedSummary({
+        ...summary,
+        id:
+          response?.data?.order_number ||
+          response?.order_number ||
+          response?.data?.id ||
+          response?.id ||
+          summary.id,
+      });
       toast.success("Order submitted.");
     } catch (requestError) {
       toast.error(extractErrorMessage(requestError, "Unable to submit order."));
     }
   }, [
-    clearSubmittedOrder,
     createOrder,
     dineType,
     discountValue,
     employeeId,
+    employeeOptions,
     orderItems,
     promoDiscountOptions,
     promoDiscountValue,
     regularDiscountOptions,
     tableNumber,
+    totals,
+    discountLabel,
+    promoLabel,
   ]);
 
-  const orderId = "#ORD-9082";
-  const hasItems = orderItems.length > 0;
-  const hasEmployees = employeeOptions.length > 0;
-  const isSubmitDisabled =
-    createOrder.isPending || isEmployeesLoading || !hasEmployees || !employeeId;
-  const discountLabel =
-    regularDiscountOptions.find((option) => option.value === discountValue)?.label ??
-    "Regulatory";
-  const promoLabel =
-    promoDiscountOptions.find((option) => option.value === promoDiscountValue)
-      ?.label ?? "Promo";
+  const onNewOrder = useCallback(() => {
+    setSubmittedSummary(null);
+  }, []);
+
+  const onPrintSummary = useCallback(() => {
+    setSubmittedSummary(null);
+    clearSubmittedOrder();
+  }, [clearSubmittedOrder]);
 
   return (
-    <aside className="sticky top-6 flex h-[calc(100vh-3rem)] min-h-[42rem] flex-col rounded-xl bg-[#fffafa] px-4 py-5 shadow-none">
+    <>
+    <aside className="sticky top-6 flex h-[calc(100vh-3rem)] min-h-[42rem] flex-col rounded-xl bg-sidebar-red px-4 py-5 shadow-none">
       <header className="flex items-center justify-between">
         <Title size="lg" className="text-[1.45rem] font-bold text-gray-950">
           Current Order
@@ -263,7 +311,7 @@ export default function OrderSidebar() {
           </Select>
           {!isEmployeesLoading && !hasEmployees ? (
             <Paragraph size="xs" className="text-red-600">
-              Add an active employee first before saving orders.
+              No active employees. Orders can still be saved for now.
             </Paragraph>
           ) : null}
           {isEmployeesError && !hasEmployees ? (
@@ -496,10 +544,16 @@ export default function OrderSidebar() {
             onClick={onSubmit}
             disabled={isSubmitDisabled}
           >
-            Save & Print Receipt
+            Save Order
           </IButton>
         </>
       ) : null}
     </aside>
+    <OrderSummaryModal
+      summary={submittedSummary}
+      onClose={onNewOrder}
+      onPrint={onPrintSummary}
+    />
+    </>
   );
 }
