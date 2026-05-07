@@ -1,8 +1,30 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-export function usePagination(totalPages = 10, initialPage = 1) {
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [inputPage, setInputPage] = useState(initialPage.toString());
+export function usePagination(totalPages = 1, initialPage = 1) {
+  const normalizedTotalPages = useMemo(
+    () => Math.max(1, Number(totalPages) || 1),
+    [totalPages]
+  );
+  const normalizedInitialPage = useMemo(
+    () => Math.min(Math.max(1, Number(initialPage) || 1), normalizedTotalPages),
+    [initialPage, normalizedTotalPages]
+  );
+
+  const [currentPage, setCurrentPage] = useState(normalizedInitialPage);
+  const [inputPage, setInputPage] = useState(normalizedInitialPage.toString());
+
+  useEffect(() => {
+    setCurrentPage((page) => {
+      const nextPage = Math.min(Math.max(1, page), normalizedTotalPages);
+      setInputPage(nextPage.toString());
+      return nextPage;
+    });
+  }, [normalizedTotalPages]);
+
+  useEffect(() => {
+    setCurrentPage(normalizedInitialPage);
+    setInputPage(normalizedInitialPage.toString());
+  }, [normalizedInitialPage]);
 
   const handlePageClick = (page) => {
     setCurrentPage(page);
@@ -11,7 +33,7 @@ export function usePagination(totalPages = 10, initialPage = 1) {
 
   const handleGoToPage = () => {
     const page = parseInt(inputPage);
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= normalizedTotalPages) {
       setCurrentPage(page);
     }
   };
@@ -27,7 +49,7 @@ export function usePagination(totalPages = 10, initialPage = 1) {
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
+    if (currentPage < normalizedTotalPages) {
       handlePageClick(currentPage + 1);
     }
   };
@@ -35,23 +57,28 @@ export function usePagination(totalPages = 10, initialPage = 1) {
   const getVisiblePages = () => {
     const pages = [];
     
-    if (totalPages <= 7) {
+    if (normalizedTotalPages <= 7) {
       // Show all pages if 7 or fewer
-      for (let i = 1; i <= totalPages; i++) {
+      for (let i = 1; i <= normalizedTotalPages; i++) {
         pages.push(i);
       }
     } else if (currentPage <= 3) {
-      // Show first 5 pages when near the beginning
-      for (let i = 1; i <= 5; i++) {
+      // Show first 5 pages when near the beginning (but don't exceed totalPages)
+      const showCount = Math.min(5, normalizedTotalPages);
+      for (let i = 1; i <= showCount; i++) {
         pages.push(i);
       }
-      pages.push('...');
-      pages.push(totalPages);
-    } else if (currentPage >= totalPages - 2) {
-      // Show last 5 pages when near the end
+      if (normalizedTotalPages > showCount) {
+        pages.push('...');
+        pages.push(normalizedTotalPages);
+      }
+    } else if (currentPage >= normalizedTotalPages - 2) {
+      // Show last 5 pages when near the end (but don't go below 1)
       pages.push(1);
       pages.push('...');
-      for (let i = totalPages - 4; i <= totalPages; i++) {
+      const showCount = Math.min(5, normalizedTotalPages);
+      const start = Math.max(normalizedTotalPages - showCount + 1, 1);
+      for (let i = start; i <= normalizedTotalPages; i++) {
         pages.push(i);
       }
     } else {
@@ -62,7 +89,7 @@ export function usePagination(totalPages = 10, initialPage = 1) {
         pages.push(i);
       }
       pages.push('...');
-      pages.push(totalPages);
+      pages.push(normalizedTotalPages);
     }
     
     return pages;
@@ -77,7 +104,7 @@ export function usePagination(totalPages = 10, initialPage = 1) {
   return {
     currentPage,
     inputPage,
-    totalPages,
+    totalPages: normalizedTotalPages,
     visiblePages: getVisiblePages(),
     handlePageClick,
     handleGoToPage,
@@ -88,6 +115,6 @@ export function usePagination(totalPages = 10, initialPage = 1) {
     setCurrentPage,
     setInputPage,
     canGoPrev: currentPage > 1,
-    canGoNext: currentPage < totalPages,
+    canGoNext: currentPage < normalizedTotalPages,
   };
 }
