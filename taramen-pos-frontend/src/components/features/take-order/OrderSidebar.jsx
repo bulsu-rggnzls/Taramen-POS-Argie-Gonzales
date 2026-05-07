@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { Settings, Table2, Trash2, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  Settings,
+  Table2,
+  Trash2,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
@@ -20,12 +26,12 @@ import {
   DEFAULT_DISCOUNT_OPTIONS,
   NONE_DISCOUNT_OPTION,
   TAX_RATE,
-} from "@/pages/take-order/take-order-config";
+} from "@/config/take-order-config";
 import {
   buildOrderPayload,
   calculateDiscountAmount,
   formatCurrency,
-} from "@/pages/take-order/utils";
+} from "@/shared/helpers/takeOrder";
 import {
   useCreateOrderMutation,
   useDiscountGroupsQuery,
@@ -33,6 +39,7 @@ import {
 } from "@/queries/useTakeOrderQueries";
 import { extractErrorMessage } from "@/shared/helpers/extractErrorMessage";
 import useTakeOrderStore from "@/stores/useTakeOrderStore";
+import OrderSummaryModal from "@/components/features/take-order/modals/OrderSummaryModal";
 
 const selectOrderSidebarState = (state) => ({
   dineType: state.dineType,
@@ -51,6 +58,7 @@ const selectOrderSidebarActions = (state) => ({
 });
 
 export default function OrderSidebar() {
+  const [submittedSummary, setSubmittedSummary] = useState(null);
   const {
     dineType,
     discountValue,
@@ -60,10 +68,13 @@ export default function OrderSidebar() {
     tableNumber,
   } = useTakeOrderStore(useShallow(selectOrderSidebarState));
   const actions = useTakeOrderStore(useShallow(selectOrderSidebarActions));
-  const ensureEmployeeId = useTakeOrderStore((state) => state.ensureEmployeeId);
   const clearSubmittedOrder = useTakeOrderStore((state) => state.clearSubmittedOrder);
   const createOrder = useCreateOrderMutation();
-  const { data: employeeOptions = [] } = useEmployeeOptionsQuery();
+  const {
+    data: employeeOptions = [],
+    isLoading: isEmployeesLoading,
+    isError: isEmployeesError,
+  } = useEmployeeOptionsQuery();
   const { data: discountGroups } = useDiscountGroupsQuery();
   const regularDiscountOptions =
     discountGroups?.regularDiscountOptions ?? DEFAULT_DISCOUNT_OPTIONS;
@@ -72,10 +83,21 @@ export default function OrderSidebar() {
 
   useEffect(() => {
     const firstEmployeeId = employeeOptions[0]?.value;
-    if (firstEmployeeId) {
-      ensureEmployeeId(firstEmployeeId);
+    const hasSelectedEmployee = employeeOptions.some(
+      (option) => option.value === employeeId,
+    );
+
+    if (!firstEmployeeId) {
+      if (employeeId) {
+        actions.setField("employeeId", "");
+      }
+      return;
     }
-  }, [employeeOptions, ensureEmployeeId]);
+
+    if (!employeeId || !hasSelectedEmployee) {
+      actions.setField("employeeId", firstEmployeeId);
+    }
+  }, [actions, employeeId, employeeOptions]);
 
   const totals = useMemo(() => {
     const subtotal = orderItems.reduce((sum, item) => {
@@ -112,6 +134,17 @@ export default function OrderSidebar() {
     regularDiscountOptions,
   ]);
 
+  const orderId = "#ORD-9082";
+  const hasItems = orderItems.length > 0;
+  const hasEmployees = employeeOptions.length > 0;
+  const isSubmitDisabled = createOrder.isPending;
+  const discountLabel =
+    regularDiscountOptions.find((option) => option.value === discountValue)?.label ??
+    "Regulatory";
+  const promoLabel =
+    promoDiscountOptions.find((option) => option.value === promoDiscountValue)
+      ?.label ?? "Promo";
+
   const onSubmit = useCallback(async () => {
     if (orderItems.length === 0) {
       toast.error("Add at least one item before submitting the order.");
@@ -123,54 +156,97 @@ export default function OrderSidebar() {
       discountValue,
       employeeId,
       orderItems,
+      promoDiscountOptions,
+      promoDiscountValue,
       regularDiscountOptions,
       tableNumber,
       noneDiscountOption: NONE_DISCOUNT_OPTION,
     });
+    const employeeLabel =
+      employeeOptions.find((option) => option.value === employeeId)?.label ||
+      "No employee selected";
+    const summary = {
+      id: `#ORD-${Date.now().toString().slice(-4)}`,
+      dineType,
+      tableNumber: dineType === "takeout" ? "Takeout" : tableNumber || "Not set",
+      employeeLabel,
+      items: orderItems.map((item) => ({
+        ...item,
+        lineTotal:
+          (item.price +
+            (item.addons?.reduce((sum, addon) => sum + addon.price, 0) ?? 0)) *
+          item.qty,
+      })),
+      discountLabel,
+      promoLabel,
+      totals,
+    };
+
+    if (!employeeId) {
+      setSubmittedSummary(summary);
+      toast.success("Order ready for review.");
+      return;
+    }
 
     try {
-      await createOrder.mutateAsync(payload);
-      clearSubmittedOrder();
+      const response = await createOrder.mutateAsync(payload);
+      setSubmittedSummary({
+        ...summary,
+        id:
+          response?.data?.order_number ||
+          response?.order_number ||
+          response?.data?.id ||
+          response?.id ||
+          summary.id,
+      });
       toast.success("Order submitted.");
     } catch (requestError) {
       toast.error(extractErrorMessage(requestError, "Unable to submit order."));
     }
   }, [
-    clearSubmittedOrder,
     createOrder,
     dineType,
     discountValue,
     employeeId,
+    employeeOptions,
     orderItems,
+    promoDiscountOptions,
+    promoDiscountValue,
     regularDiscountOptions,
     tableNumber,
+    totals,
+    discountLabel,
+    promoLabel,
   ]);
 
-  const orderId = "#ORD-9082";
-  const hasItems = orderItems.length > 0;
-  const discountLabel =
-    regularDiscountOptions.find((option) => option.value === discountValue)?.label ??
-    "Regulatory";
-  const promoLabel =
-    promoDiscountOptions.find((option) => option.value === promoDiscountValue)
-      ?.label ?? "Promo";
+  const onNewOrder = useCallback(() => {
+    setSubmittedSummary(null);
+  }, []);
+
+  const onPrintSummary = useCallback(() => {
+    setSubmittedSummary(null);
+    clearSubmittedOrder();
+  }, [clearSubmittedOrder]);
 
   return (
-    <aside className="bg-transparent border border-transparent shadow-none p-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col">
+    <>
+    <aside className="sticky top-6 flex h-[calc(100vh-3rem)] min-h-[42rem] flex-col rounded-xl bg-sidebar-red px-4 py-5 shadow-none">
       <header className="flex items-center justify-between">
-        <Title size="lg" className="text-gray-900">
+        <Title size="lg" className="text-[1.45rem] font-bold text-gray-950">
           Current Order
         </Title>
-        <Badge className="bg-gray-100 text-gray-600">{orderId}</Badge>
+        <Badge className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600">
+          {orderId}
+        </Badge>
       </header>
 
-      <div className="mt-5">
-        <div className="grid grid-cols-2 rounded-full border border-gray-200 bg-gray-50 p-1">
-            <IButton
+      <div className="mt-8">
+        <div className="grid grid-cols-2 rounded-full bg-gray-200 p-2">
+          <IButton
             type="button"
             variant={dineType === "dine-in" ? "taramenRed" : "ghost"}
             showLoading={false}
-            className="h-8 rounded-full text-xs font-semibold"
+            className="h-9 rounded-full text-xs font-medium shadow-none"
             onClick={() => actions.setField("dineType", "dine-in")}
           >
             Dine In
@@ -179,41 +255,51 @@ export default function OrderSidebar() {
             type="button"
             variant={dineType === "takeout" ? "taramenRed" : "ghost"}
             showLoading={false}
-            className="h-8 rounded-full text-xs font-semibold"
+            className="h-9 rounded-full text-xs font-medium shadow-none hover:bg-transparent"
             onClick={() => actions.setField("dineType", "takeout")}
           >
-            Take Out
+            Take out
           </IButton>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <label className="space-y-2">
-          <Paragraph size="xs" className="text-gray-500 font-semibold uppercase">
+          <Paragraph size="xs" className="font-semibold uppercase !text-black">
             Table
           </Paragraph>
           <div className="relative">
-            <Table2 className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            <Table2 className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-taramen-red" />
             <Input
               value={tableNumber}
               onChange={(event) => actions.setField("tableNumber", event.target.value)}
-              className="h-10 pl-9 text-sm font-semibold"
+              className="h-9 rounded-lg border-taramen-red bg-white pl-9 text-xs font-medium text-gray-950 focus-visible:ring-taramen-red/25"
               inputMode="numeric"
               disabled={dineType === "takeout"}
+              placeholder={dineType === "takeout" ? "Takeout" : "Enter table no."}
             />
           </div>
         </label>
         <label className="space-y-2">
-          <Paragraph size="xs" className="text-gray-500 font-semibold uppercase">
+          <Paragraph size="xs" className="font-semibold uppercase !text-black">
             Employee
           </Paragraph>
           <Select
             value={employeeId}
             onValueChange={(value) => actions.setField("employeeId", value)}
+            disabled={isEmployeesLoading || !hasEmployees}
           >
-            <SelectTrigger className="h-10 w-full text-sm font-semibold">
-              <User className="size-4 text-gray-400" />
-              <SelectValue placeholder="Select employee" />
+            <SelectTrigger className="h-9 w-full rounded-lg border-taramen-red bg-white text-xs font-medium text-gray-950 focus:ring-taramen-red/25">
+              <User className="size-4 text-taramen-red" />
+              <SelectValue
+                placeholder={
+                  isEmployeesLoading
+                    ? "Loading employees..."
+                    : hasEmployees
+                      ? "Select employee"
+                      : "No active employees"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
               {employeeOptions.map((option) => (
@@ -223,6 +309,16 @@ export default function OrderSidebar() {
               ))}
             </SelectContent>
           </Select>
+          {!isEmployeesLoading && !hasEmployees ? (
+            <Paragraph size="xs" className="text-red-600">
+              No active employees. Orders can still be saved for now.
+            </Paragraph>
+          ) : null}
+          {isEmployeesError && !hasEmployees ? (
+            <Paragraph size="xs" className="text-red-600">
+              Employee list could not be loaded.
+            </Paragraph>
+          ) : null}
         </label>
       </div>
 
@@ -231,18 +327,24 @@ export default function OrderSidebar() {
           <div className="flex-1 overflow-y-auto pr-1">
             <ul className="space-y-4">
               {orderItems.map((item) => (
-                <li key={item.id} className="rounded-2xl border border-gray-100 p-4">
+                <li key={item.id} className="rounded-lg border border-orange-400 bg-white p-3 shadow-lg">
                   <div className="flex items-start gap-3">
                     <div
                       className={cn(
-                        "h-12 w-12 rounded-xl bg-gradient-to-br",
+                        "h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gradient-to-br",
                         item.accent ?? "from-slate-200 via-slate-100 to-white",
                       )}
-                    />
+                    >
+                      <img
+                        src="/taramen-bg.jpg"
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <Title size="sm" className="text-gray-900">
+                        <Title size="sm" className="text-gray-950">
                           {item.name}
                         </Title>
                         <Paragraph size="xs" className="text-gray-500">
@@ -264,7 +366,7 @@ export default function OrderSidebar() {
                           </Paragraph>
                         ) : null}
                       </div>
-                      <Paragraph size="sm" className="text-gray-900 font-semibold">
+                      <Paragraph size="sm" className="font-semibold text-gray-950">
                         {formatCurrency(
                           (item.price +
                             (item.addons?.reduce(
@@ -281,7 +383,7 @@ export default function OrderSidebar() {
                             type="button"
                             variant="ghost"
                             showLoading={false}
-                            className="h-8 w-8 rounded-none border-r border-gray-200 p-0 text-gray-600 hover:bg-transparent"
+                            className="h-8 w-8 rounded-none p-0 text-gray-600 hover:bg-transparent"
                             onClick={() => actions.changeItemQty(item.id, -1)}
                           >
                             -
@@ -293,7 +395,7 @@ export default function OrderSidebar() {
                             type="button"
                             variant="ghost"
                             showLoading={false}
-                            className="h-8 w-8 rounded-none border-l border-gray-200 p-0 text-gray-600 hover:bg-transparent"
+                            className="h-8 w-8 rounded-none p-0 text-gray-600 hover:bg-transparent"
                             onClick={() => actions.changeItemQty(item.id, 1)}
                           >
                             +
@@ -329,13 +431,14 @@ export default function OrderSidebar() {
             </ul>
           </div>
         ) : (
-          <div className="flex flex-1 items-center">
-            <div className="w-full rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
-              <Title size="sm" className="text-gray-900">
+          <div className="flex flex-1 items-center justify-center">
+            <div className="w-full text-center">
+              <AlertCircle className="mx-auto mb-4 size-7 text-red-600" />
+              <Title size="sm" className="text-[0.78rem] font-bold text-gray-950">
                 No items yet
               </Title>
-              <Paragraph size="sm" className="text-gray-500">
-                Add products from the Take Order list to build this ticket.
+              <Paragraph size="xs" className="mx-auto mt-1 max-w-[17rem] text-gray-950">
+                Add products from the <span className="text-taramen-red">Take Order</span> list to build this ticket.
               </Paragraph>
             </div>
           </div>
@@ -344,17 +447,17 @@ export default function OrderSidebar() {
 
       {hasItems ? (
         <>
-          <div className="mt-6 space-y-4 border-t border-gray-100 pt-4">
+          <div className="mt-6 space-y-4 border-t border-gray-200 pt-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Paragraph size="xs" className="text-gray-500 font-semibold uppercase">
+                <Paragraph size="xs" className="font-semibold uppercase !text-black">
                   Regulatory Dsc.
                 </Paragraph>
                 <Select
                   value={discountValue}
                   onValueChange={(value) => actions.setField("discountValue", value)}
                 >
-                  <SelectTrigger className="h-9 w-full text-xs font-semibold">
+                  <SelectTrigger className="h-9 w-full rounded-lg border border-taramen-red text-xs font-semibold text-gray-900">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -367,14 +470,14 @@ export default function OrderSidebar() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Paragraph size="xs" className="text-gray-500 font-semibold uppercase">
+                <Paragraph size="xs" className="font-semibold uppercase !text-black">
                   Promo Dsc.
                 </Paragraph>
                 <Select
                   value={promoDiscountValue}
                   onValueChange={(value) => actions.setField("promoDiscountValue", value)}
                 >
-                  <SelectTrigger className="h-9 w-full text-xs font-semibold">
+                  <SelectTrigger className="h-9 w-full rounded-lg border border-taramen-red text-xs font-semibold text-gray-900">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -428,7 +531,7 @@ export default function OrderSidebar() {
             <Paragraph size="sm" className="text-gray-500">
               Total Amount
             </Paragraph>
-            <Title size="2xl" className="text-gray-900">
+            <Title size="2xl" className="text-gray-950">
               {formatCurrency(totals.total)}
             </Title>
           </div>
@@ -436,14 +539,21 @@ export default function OrderSidebar() {
           <IButton
             type="button"
             variant="taramenRed"
-            className="mt-6 w-full rounded-2xl py-6 text-base font-semibold"
-            showLoading={false}
+            className="mt-6 w-full rounded-lg py-6 text-base font-semibold"
+            showLoading={createOrder.isPending}
             onClick={onSubmit}
+            disabled={isSubmitDisabled}
           >
-            Save & Print Receipt
+            Save Order
           </IButton>
         </>
       ) : null}
     </aside>
+    <OrderSummaryModal
+      summary={submittedSummary}
+      onClose={onNewOrder}
+      onPrint={onPrintSummary}
+    />
+    </>
   );
 }

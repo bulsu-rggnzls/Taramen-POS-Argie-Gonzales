@@ -1,5 +1,5 @@
 import apiClient from "@/api/client";
-import { getArrayFromPayload } from "./utils";
+import { getArrayFromPayload, normalizeBoolean } from "./apiPayloadUtils";
 
 export const discountQueryKeys = {
   discounts: ["discounts"],
@@ -12,8 +12,8 @@ export const getDiscounts = async () => {
 };
 
 export const getActiveDiscounts = async () => {
-  const response = await apiClient.get("/discounts");
-  return getArrayFromPayload(response.data).filter(
-    (discount) => discount.active ?? discount.status ?? discount.is_active,
+  const response = await apiClient.get("/discounts/getActive");
+  return getArrayFromPayload(response.data).filter((discount) =>
+    normalizeBoolean(discount.active, true),
   );
 };

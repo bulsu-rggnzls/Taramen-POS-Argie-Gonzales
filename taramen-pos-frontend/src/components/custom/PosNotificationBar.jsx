@@ -29,12 +29,12 @@ export default function PosNotificationBar({
           type="button"
           variant="outline"
           size="icon"
-          className="relative size-10 rounded-2xl border-gray-200 bg-white text-gray-600 shadow-md hover:border-orange/30 hover:text-orange"
+          className="relative size-9 rounded-full border-0 bg-white text-gray-800 shadow-sm hover:bg-white hover:text-taramen-red"
           aria-label="Notifications"
         >
           <Bell className="size-4" />
           {unreadCount > 0 ? (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-orange" />
+            <span className="absolute right-2 top-2 size-2 rounded-full bg-taramen-red" />
           ) : null}
         </IButton>
       </PopoverTrigger>

@@ -6,8 +6,8 @@ import Modal from "@/components/custom/Modal";
 import Paragraph from "@/components/custom/Paragraph";
 import Title from "@/components/custom/Title";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ADD_ONS, REMOVALS } from "@/pages/take-order/take-order-config";
-import { formatCurrency } from "@/pages/take-order/utils";
+import { ADD_ONS, REMOVALS } from "@/config/take-order-config";
+import { formatCurrency } from "@/shared/helpers/takeOrder";
 import useTakeOrderStore, { getCustomizeItem } from "@/stores/useTakeOrderStore";
 
 const createDraft = (item) => ({
@@ -134,28 +134,26 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
     <Modal
       isOpen
       onClose={closeCustomizeModal}
+      size="xl"
+      showFooter={false}
+      className="gap-0 rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl"
+      headerClassName="gap-1 border-b-0 px-5 pt-5 sm:px-6 sm:pt-6"
+      contentClassName="my-0 px-5 pb-5 sm:px-6 sm:pb-6"
       title={
-        <Title size="lg" className="text-gray-900">
-          Customize {customizeItem?.name ?? "Item"}
+        <Title size="lg" className="text-[2rem] font-bold leading-none text-gray-900">
+          Customize{" "}
+          <span className="text-taramen-red">{customizeItem?.name ?? "Item"}</span>
         </Title>
       }
       description={
-        <Paragraph size="sm" className="text-gray-500">
+        <Paragraph size="sm" className="text-[0.95rem] text-gray-500">
           Select add-ons, removals, or special requests.
         </Paragraph>
       }
-      primaryAction={{
-        label: "Apply",
-        onConfirm: onApply,
-      }}
-      secondaryAction={{
-        label: "Cancel",
-        onCancel: closeCustomizeModal,
-      }}
     >
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <Title size="sm" className="text-gray-900">
+      <div className="space-y-7">
+        <div className="space-y-4">
+          <Title size="sm" className="text-sm font-semibold text-gray-900">
             Add-ons
           </Title>
           {addons.map((addon) => {
@@ -168,18 +166,19 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
             return (
               <label
                 key={addon.id}
-                className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3"
+                className="flex min-h-[3.125rem] items-center rounded-lg border border-gray-300 bg-white px-3 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
               >
                 <div className="flex items-center gap-3">
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(value) => toggleAddon(addon.id, value)}
+                    className="size-4 rounded-[3px] border-gray-300 data-[state=checked]:border-taramen-red data-[state=checked]:bg-taramen-red"
                   />
-                  <div>
-                    <Paragraph size="sm" className="text-gray-900 font-semibold">
+                  <div className="space-y-0.5">
+                    <Paragraph size="sm" className="font-semibold text-gray-800">
                       {addon.label}
                     </Paragraph>
-                    <Paragraph size="xs" className="text-gray-500">
+                    <Paragraph size="xs" className="font-medium text-gray-500">
                       {priceLabel}
                     </Paragraph>
                   </div>
@@ -187,24 +186,24 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
               </label>
             );
           })}
-          <div className="grid grid-cols-[1fr_6.25rem_auto] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_5rem_3.625rem] gap-3">
             <input
               value={draft.newAddonLabel}
               onChange={(event) => setDraftField("newAddonLabel", event.target.value)}
               placeholder="Custom add-on"
-              className="h-10 rounded-lg border border-gray-200 px-3 text-sm"
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-taramen-red focus:outline-none"
             />
             <input
               value={draft.newAddonPrice}
               onChange={(event) => setDraftField("newAddonPrice", event.target.value)}
               placeholder="Price"
-              className="h-10 rounded-lg border border-gray-200 px-3 text-sm"
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-taramen-red focus:outline-none"
             />
             <IButton
               type="button"
-              variant="outline"
+              variant="taramenRed"
               showLoading={false}
-              className="h-10 rounded-lg text-sm font-semibold"
+              className="h-10 rounded-md px-0 text-sm font-semibold"
               onClick={addCustomAddon}
             >
               Add
@@ -212,8 +211,8 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
           </div>
         </div>
 
-        <div className="space-y-3">
-          <Title size="sm" className="text-gray-900">
+        <div className="space-y-4">
+          <Title size="sm" className="text-sm font-semibold text-gray-900">
             Remove / Less
           </Title>
           {removals.map((removal) => {
@@ -222,32 +221,33 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
             return (
               <label
                 key={removal.id}
-                className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3"
+                className="flex min-h-[3.125rem] items-center rounded-lg border border-gray-300 bg-white px-3 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
               >
                 <div className="flex items-center gap-3">
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(value) => toggleRemoval(removal.id, value)}
+                    className="size-4 rounded-[3px] border-gray-300 data-[state=checked]:border-taramen-red data-[state=checked]:bg-taramen-red"
                   />
-                  <Paragraph size="sm" className="text-gray-900 font-semibold">
+                  <Paragraph size="sm" className="font-semibold text-gray-800">
                     {removal.label}
                   </Paragraph>
                 </div>
               </label>
             );
           })}
-          <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_3.625rem] gap-3">
             <input
               value={draft.newRemovalLabel}
               onChange={(event) => setDraftField("newRemovalLabel", event.target.value)}
               placeholder="Custom removal"
-              className="h-10 rounded-lg border border-gray-200 px-3 text-sm"
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-taramen-red focus:outline-none"
             />
             <IButton
               type="button"
-              variant="outline"
+              variant="taramenRed"
               showLoading={false}
-              className="h-10 rounded-lg text-sm font-semibold"
+              className="h-10 rounded-md px-0 text-sm font-semibold"
               onClick={addCustomRemoval}
             >
               Add
@@ -255,16 +255,37 @@ function CustomizeDraft({ closeCustomizeModal, customizeItem, updateItemCustomiz
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Title size="sm" className="text-gray-900">
-            Special Request
+        <div className="space-y-3">
+          <Title size="sm" className="text-sm font-semibold text-gray-900">
+            Special Instruction
           </Title>
           <textarea
             value={draft.note}
             onChange={(event) => setDraftField("note", event.target.value)}
             placeholder="Type any request..."
-            className="min-h-[5.625rem] w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="min-h-[6.75rem] w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-taramen-red focus:outline-none"
           />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <IButton
+            type="button"
+            variant="outline"
+            showLoading={false}
+            className="h-10 rounded-md border-gray-400 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+            onClick={closeCustomizeModal}
+          >
+            Cancel
+          </IButton>
+          <IButton
+            type="button"
+            variant="taramenRed"
+            showLoading={false}
+            className="h-10 rounded-md px-4 text-sm font-semibold"
+            onClick={onApply}
+          >
+            Apply
+          </IButton>
         </div>
       </div>
     </Modal>

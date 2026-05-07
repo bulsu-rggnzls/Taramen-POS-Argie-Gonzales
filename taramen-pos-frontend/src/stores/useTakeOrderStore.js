@@ -1,18 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { takeOrderDefaultValues } from "@/shared/lib/zod/schema/take-order";
 
-const initialState = {
-  tableNumber: "14",
-  employeeId: "",
-  discountValue: "none",
-  promoDiscountValue: "none",
-  dineType: "dine-in",
-  orderItems: [],
-  searchTerm: "",
-  activeCategory: "all",
-  isCustomizeModalOpen: false,
-  customizingItemId: null,
-};
+const initialState = takeOrderDefaultValues;
 
 export const useTakeOrderStore = create(
   immer((set) => ({

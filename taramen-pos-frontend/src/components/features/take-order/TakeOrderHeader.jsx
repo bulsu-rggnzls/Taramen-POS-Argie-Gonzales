@@ -1,8 +1,8 @@
 import { ArrowLeft, Search } from "lucide-react";
 
 import IButton from "@/components/custom/Button";
+import Paragraph from "@/components/custom/Paragraph";
 import Title from "@/components/custom/Title";
-import { Badge } from "@/components/ui/badge";
 import useTakeOrderStore from "@/stores/useTakeOrderStore";
 
 export default function TakeOrderHeader({ onBack }) {
@@ -10,34 +10,37 @@ export default function TakeOrderHeader({ onBack }) {
   const setField = useTakeOrderStore((state) => state.setField);
 
   return (
-    <header className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <IButton
-            type="button"
-            variant="outline"
-            showLoading={false}
-            className="size-10 rounded-full border-gray-200 p-0 text-gray-600"
-            onClick={onBack}
-            aria-label="Back to dashboard"
-          >
-            <ArrowLeft className="size-5" />
-          </IButton>
-          <Title size="2xl" className="text-gray-900">
+    <header className="flex flex-col gap-5">
+      <div className="flex items-start gap-3">
+        <IButton
+          type="button"
+          variant="outline"
+          showLoading={false}
+          className="mt-0.5 size-9 rounded-full border-gray-300 bg-white p-0 text-gray-700 shadow-sm hover:border-taramen-red hover:text-taramen-red"
+          onClick={onBack}
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft className="size-4" />
+        </IButton>
+
+        <div>
+          <Title size="2xl" className="text-[1.45rem] font-bold leading-tight text-gray-950">
             Take Order
           </Title>
+          <Paragraph size="xs" className="mt-1 text-gray-600">
+            Process and record customer orders efficiently
+          </Paragraph>
         </div>
-        <Badge className="bg-gray-100 text-gray-600">Popular Items</Badge>
       </div>
 
-      <label className="relative flex w-full items-center">
-        <Search className="absolute left-3 size-4 text-gray-400" />
+      <label className="relative w-full">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
           value={searchTerm}
           onChange={(event) => setField("searchTerm", event.target.value)}
           placeholder="Search menu items..."
-          className="h-11 w-full rounded-full border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-700 outline-none focus:border-orange/60 focus:ring-2 focus:ring-orange/20"
+          className="h-9 w-full rounded-full border-0 bg-white pl-10 pr-4 text-xs text-gray-700 shadow-sm outline-none ring-1 ring-transparent transition placeholder:text-gray-400 focus:ring-taramen-red/25"
         />
       </label>
     </header>
