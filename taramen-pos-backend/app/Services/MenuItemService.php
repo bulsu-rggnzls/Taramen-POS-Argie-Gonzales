@@ -2,45 +2,101 @@
 
 namespace App\Services;
 
+use App\Models\FilesUpload;
 use App\Models\MenuItem;
+use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use App\Helper\FileUploadHelper;
 
 class MenuItemService {
 
+
+    public function getAllItems(){
+        $menuItems = MenuItem::with(['category', 'bundleComponents.category', 'fileUpload'])->get();
+
+        return $menuItems->map(fn (MenuItem $menuItem) => $this->attachTemporaryImageUrl($menuItem));
+    }
     public function getAvailableMenuItems(){
-        return MenuItem::where('available', true)->get();
+        $menuItems = MenuItem::with(['category', 'bundleComponents.category', 'fileUpload'])
+            ->where('available', true)
+            ->get();
+
+        return $menuItems->map(fn (MenuItem $menuItem) => $this->attachTemporaryImageUrl($menuItem));
     }
 
     public function createMenuItem(array $data, ?UploadedFile $image = null){
-        $data = $this->normalizeStatusFields($data);
-        
-        if ($image){
-            $data['image'] = $image->store('menu_items', 'public');
-        }
+        return DB::transaction(function () use ($data, $image) {
+            $components = $data['components'] ?? [];
+            unset($data['components']);
 
-        return MenuItem::create($data);
+            $data['is_bundle'] = (bool) ($data['is_bundle'] ?? false);
+
+            if ($image){
+                $file_uploaded = FileUploadHelper::upload($image, 'menu_items');
+                $data['image_id'] = $file_uploaded->id;
+            }
+
+            $menuItem = MenuItem::create($data);
+
+            if ($menuItem->is_bundle) {
+
+                $this->syncBundleComponents($menuItem, $components);
+            }
+
+            $menuItem = $menuItem->fresh(['category', 'bundleComponents.category', 'fileUpload']);
+
+            return $this->attachTemporaryImageUrl($menuItem);
+        });
     }
 
     public function getMenuItem($id){
-        $menuItem = MenuItem::withTrashed()->findOrFail($id);
+        $menuItem = MenuItem::withTrashed()
+            ->with(['category', 'bundleComponents.category', 'fileUpload'])
+            ->findOrFail($id);
 
-        return $menuItem;
+        return $this->attachTemporaryImageUrl($menuItem);
     }
 
     public function updateMenuItem(MenuItem $menuItem, array $data, ?UploadedFile $image = null){
-        $data = $this->normalizeStatusFields($data);
-        
-        if ($image){
-            if($menuItem->image) {
-                Storage::disk('public')->delete($menuItem->image);
+        return DB::transaction(function () use ($menuItem, $data, $image) {
+            $hasComponents = array_key_exists('components', $data);
+            $components = $data['components'] ?? [];
+            unset($data['components']);
+
+            if ($image){
+                if ($menuItem->fileUpload?->file_path) {
+                    Storage::disk('public')->delete($menuItem->fileUpload->file_path);
+                }
+                $file_uploaded = FileUploadHelper::upload($image, 'menu_items');
+                $data['image_id'] = $file_uploaded->id;
             }
-            $data['image'] = $image->store('menu_items', 'public');
-        }
+            $willBeBundle = array_key_exists('is_bundle', $data)
+                ? (bool) $data['is_bundle']
+                : (bool) $menuItem->is_bundle;
 
-        $menuItem->update($data);
+            if ($hasComponents && !$willBeBundle) {
+                throw ValidationException::withMessages([
+                    'components' => ['Components are only allowed for bundle items.'],
+                ]);
+            }
 
-        return $menuItem;
+            $menuItem->update($data);
+
+            if (!$willBeBundle) {
+                $menuItem->bundleComponents()->detach();
+            } elseif ($hasComponents) {
+                $this->syncBundleComponents($menuItem, $components);
+            }
+
+            $menuItem = $menuItem->fresh(['category', 'bundleComponents.category', 'fileUpload']);
+
+            return $this->attachTemporaryImageUrl($menuItem);
+        });
     }
 
     public function archiveMenuItem($id){
@@ -49,7 +105,6 @@ class MenuItemService {
         $menuItem->delete();
 
         $menuItem->update([
-            'status' => false,
             'available' => false
         ]);
     }
@@ -60,7 +115,6 @@ class MenuItemService {
         $menuItem->restore();
 
         $menuItem->update([
-            'status' => true,
             'available' => true
         ]);
     }
@@ -68,21 +122,65 @@ class MenuItemService {
     public function toggleAvailability($id){
         $menuItem = MenuItem::withTrashed()->findOrFail($id);
         $menuItem->available = !$menuItem->available;
-        $menuItem->status = $menuItem->available;
         $menuItem->save();
 
         return $menuItem;
     }
 
-    private function normalizeStatusFields(array $data): array
+    /**
+     * @param list<array{menu_item_id: int, quantity: int}> $components
+     */
+    private function syncBundleComponents(MenuItem $bundleMenuItem, array $components): void
     {
-        if (array_key_exists('status', $data)) {
-            $data['available'] = (bool) $data['status'];
-        } elseif (array_key_exists('available', $data)) {
-            $data['status'] = (bool) $data['available'];
+        if (empty($components)) {
+            $bundleMenuItem->bundleComponents()->detach();
+            return;
         }
 
-        return $data;
+        $syncPayload = [];
+
+        foreach ($components as $component) {
+            $componentId = (int) ($component['menu_item_id'] ?? 0);
+            $quantity = (int) ($component['quantity'] ?? 0);
+
+            if ($componentId <= 0 || $quantity <= 0) {
+                continue;
+            }
+
+            if ($componentId === (int) $bundleMenuItem->id) {
+                throw ValidationException::withMessages([
+                    'components' => ['A bundle cannot include itself as a component.'],
+                ]);
+            }
+
+            if (isset($syncPayload[$componentId])) {
+                $syncPayload[$componentId]['quantity'] += $quantity;
+                continue;
+            }
+
+            $syncPayload[$componentId] = ['quantity' => $quantity];
+        }
+
+        $bundleMenuItem->bundleComponents()->sync($syncPayload);
     }
-    
+
+    private function attachTemporaryImageUrl(MenuItem $menuItem, int $expiresInMinutes = 15): MenuItem
+    {
+        $storageFilename = $menuItem->fileUpload?->storage_filename;
+
+        if (!$storageFilename) {
+            $menuItem->setAttribute('image_url', null);
+            return $menuItem;
+        }
+
+        $signedUrl = URL::temporarySignedRoute(
+            'secure.menu.image.signed',
+            now()->addMinutes($expiresInMinutes),
+            ['storage_filename' => $storageFilename]
+        );
+
+        $menuItem->setAttribute('image_url', $signedUrl);
+
+        return $menuItem;
+    }
 }

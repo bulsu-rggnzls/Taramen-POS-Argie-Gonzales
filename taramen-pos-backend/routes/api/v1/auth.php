@@ -11,7 +11,5 @@ Route::controller(AuthController::class)->group(function () {
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', function (\Illuminate\Http\Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', [AuthController::class, 'user']);
 });

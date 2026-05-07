@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers\product;
 
+use App\Exports\ReceiptExport;
 use App\Http\Controllers\Controller;
 use App\Services\OrderService;
-use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use App\Http\Responses\ApiResponse;
-use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     public function __construct(
         protected OrderService $orderService
     ) {}
-    
+
     public function index(OrderRequest $request)
     {
         $filter = $request->validated();
@@ -27,110 +26,69 @@ class OrderController extends Controller
             'Orders retrieved successfully'
         );
     }
-  
+
     public function store(OrderRequest $request)
     {
-        try {
-            $order = $this->orderService->createOrder($request);
+        $order = $this->orderService->createOrder($request);
 
-            return ApiResponse::success(
-                $order,
-                'Order created successfully',
-                201
-            );
-        } catch (\Exception $e) {
-            return $this->internalErrorResponse('Failed to create order', $e, [
-                'action' => 'orders.store',
-            ]);
-        }
+        return ApiResponse::success(
+            $order,
+            'Order created successfully',
+            201
+        );
     }
 
-    
+
     public function show($id)
     {
-        try {
-            $order = $this->orderService->getOrder($id);
+        $order = $this->orderService->getOrder($id);
 
-            return ApiResponse::success(
-                $order,
-                'Order retrieved successfully'
-            );
-        } catch (\Exception $e) {
-            return $this->internalErrorResponse('Failed to retrieve order', $e, [
-                'action' => 'orders.show',
-                'order_id' => $id,
-            ]);
-        }
+        return ApiResponse::success(
+            $order,
+            'Order retrieved successfully'
+        );
     }
 
     public function receipt($id)
     {
-        try {
-            $receipt = $this->orderService->getReceipt($id);
+        $receipt = $this->orderService->getReceipt($id);
 
-            return ApiResponse::success(
-                $receipt,
-                'Receipt retrieved successfully'
-            );
-        } catch (\Exception $e) {
-            return ApiResponse::error(
-                'Failed to retrieve receipt',
-                500,
-                ['error' => $e->getMessage()]
-            );
-        }
+        return ApiResponse::success(
+            $receipt,
+            'Receipt retrieved successfully'
+        );
     }
-    
+
+
     public function update(OrderRequest $request, $id)
     {
-        try {
-            $order = $this->orderService->updateOrder($id, $request);
+        $order = $this->orderService->updateOrder($id, $request);
 
-            return ApiResponse::success(
-                $order,
-                'Order updated successfully'
-            );
-        } catch (\Exception $e) {
-            return $this->internalErrorResponse('Failed to update order', $e, [
-                'action' => 'orders.update',
-                'order_id' => $id,
-            ]);
-        }
+        return ApiResponse::success(
+            $order,
+            'Order updated successfully'
+        );
     }
 
     public function updateStatus(OrderRequest $request, $id)
     {
-        try {
-            $order = $this->orderService->updateOrderStatus($id, $request->status);
+        $order = $this->orderService->updateOrderStatus($id, $request->status);
 
-            return ApiResponse::success(
-                $order,
-                'Order status updated successfully'
-            );
-        } catch (\Exception $e) {
-            return $this->internalErrorResponse('Failed to update order status', $e, [
-                'action' => 'orders.updateStatus',
-                'order_id' => $id,
-            ]);
-        }
+        return ApiResponse::success(
+            $order,
+            'Order status updated successfully'
+        );
     }
 
-    
+
     public function destroy($id)
     {
-        try {
-            $order = $this->orderService->deleteOrder($id);
+        $order = $this->orderService->deleteOrder($id);
 
-            return ApiResponse::success(
-                $order,
-                'Order deleted successfully'
-            );
-        } catch (\Exception $e) {
-            return $this->internalErrorResponse('Failed to delete order', $e, [
-                'action' => 'orders.destroy',
-                'order_id' => $id,
-            ]);
-        }
+        return ApiResponse::success(
+            $order,
+            'Order deleted successfully'
+        );
     }
 
     public function stats(OrderRequest $request)
@@ -145,12 +103,8 @@ class OrderController extends Controller
         );
     }
 
-    private function internalErrorResponse(string $message, \Throwable $exception, array $context = [])
-    {
-        Log::error($message, array_merge($context, [
-            'error' => $exception->getMessage(),
-        ]));
-
-        return ApiResponse::error($message, 500);
+    public function printReceipt() {
+        $printReceipt = new ReceiptExport();
+        return $printReceipt->generate();
     }
 }

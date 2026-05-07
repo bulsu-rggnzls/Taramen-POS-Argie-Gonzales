@@ -5,5 +5,5 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['auth:sanctum'])->group(function() {
-    Route::post('/report', [ReportController::class, 'summary']);
+    Route::get('/report', [ReportController::class, 'summary']);
 });

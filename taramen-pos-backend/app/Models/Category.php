@@ -15,7 +15,7 @@ class Category extends Model
         'name',
         'description',
         'status',
-        'image',
+        'image_id',
     ];
 
     protected $casts = [
@@ -25,5 +25,9 @@ class Category extends Model
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class);
+    }
+
+    public function fileUpload(){
+        return $this->belongsTo(FilesUpload::class, "image_id", "id");
     }
 }

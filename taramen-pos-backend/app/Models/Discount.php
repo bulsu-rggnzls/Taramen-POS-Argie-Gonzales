@@ -10,7 +10,7 @@ class Discount extends Model
 {
     protected $fillable = [
         'name',
-        'type',
+        'discount_type_id',
         'value',
         'active'
     ];
@@ -24,7 +24,7 @@ class Discount extends Model
         return $this->belongsToMany(MenuItem::class, 'discount_items')->withTimestamps();
     }
 
-    public function discountType() {
+    public function discountType(): BelongsTo {
         return $this->belongsTo(DiscountType::class);
     }
 

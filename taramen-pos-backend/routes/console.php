@@ -12,7 +12,7 @@ Artisan::command('inspire', function () {
 Schedule::command('sanctum:prune-expired --hours=24')->dailyAt('02:00');
 
 Schedule::call(function (): void {
-    $retentionDays = max((int) env('ENDPOINT_LOG_RETENTION_DAYS', 30), 1);
+    $retentionDays = max((int) env('ENDPOINT_LOG_RETENTION_DAYS', 365), 1);
 
     EndpointLog::where('created_at', '<', now()->subDays($retentionDays))->delete();
 })->dailyAt('02:30');

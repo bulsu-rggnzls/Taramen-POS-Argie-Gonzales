@@ -34,4 +34,11 @@ class AuthController extends Controller
             'Logged out'
         );
     }
+
+    public function user(Request $request){
+        return ApiResponse::success(
+            $request->user(),
+            'Authenticated user retrieved successfully'
+        );
+    }
 }

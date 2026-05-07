@@ -21,13 +21,14 @@ Route::prefix('v1')
         require __DIR__ . '/api/v1/order.php';
         require __DIR__ . '/api/v1/discount.php';
     });
-    
+
     // General limit (60 / min)
     Route::middleware('throttle:limit_general')->group(function () {
         require __DIR__ . '/api/v1/category.php';
         require __DIR__ . '/api/v1/menu_item.php';
         require __DIR__ . '/api/v1/employee.php';
         require __DIR__ . '/api/v1/report.php';
-        require __DIR__ . '/api/v1/discount_type.php';
+        require __DIR__ . '/api/v1/discountType.php';
+        require __DIR__ . '/api/v1/file.php';
     });
 });

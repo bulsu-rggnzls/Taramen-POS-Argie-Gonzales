@@ -21,7 +21,7 @@ class DiscountTypeRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
-    {   
+    {
         $discountId = $this->route('discount_type') ?? $this->route('discount_types');
 
         $rules = [
@@ -29,5 +29,12 @@ class DiscountTypeRequest extends FormRequest
 
         ];
         return $rules;
+    }
+
+    public function messages() : array
+    {
+        return [
+            "name.required" => "The name cannot be empty"
+        ];
     }
 }

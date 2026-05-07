@@ -26,20 +26,20 @@ class DiscountRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isUpdate = $this->routeIs('*.update');
+        $isUpdate = $this->isMethod('put');
 
         $rules = [
             'discount_type_id' => [
-                $isUpdate ? 'sometimes' : 'required', 
+                $isUpdate ? 'sometimes' : 'required',
                 'integer',
             ],
-            
+
             'value' => [
-                $isUpdate ? 'sometimes' : 'required', 
-                'numeric', 
+                $isUpdate ? 'sometimes' : 'required',
+                'numeric',
                 'min:0'
             ],
-            
+
             'active' => ['sometimes', 'boolean'],
 
             'menu_items_id' => ['nullable', 'array'],

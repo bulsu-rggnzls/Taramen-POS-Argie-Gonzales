@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ReportRequest;
 use App\Services\ReportService;
 use App\Http\Responses\ApiResponse;

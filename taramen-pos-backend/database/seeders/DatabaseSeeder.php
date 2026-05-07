@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\MenuItem;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -18,7 +17,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             CategorySeeder::class,
-            MenuItemSeeder::class
+            MenuItemSeeder::class,
+            BundleMenuSeeder::class,
+            DiscountTypeSeeder::class,
         ]);
     }
 }

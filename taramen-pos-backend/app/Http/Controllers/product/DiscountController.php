@@ -29,13 +29,6 @@ class DiscountController extends Controller
     public function getAllActive(){
         $active_discounts = $this->discountService->getAllActiveDiscounts();
 
-        if(!$active_discounts){
-            return ApiResponse::error(
-                'Failed to get active discounts or no discounts found',
-                404
-            );
-        }
-
         return ApiResponse::success(
             $active_discounts,
             'Active discounts have been fetched successfully'

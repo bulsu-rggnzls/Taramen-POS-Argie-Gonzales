@@ -21,10 +21,10 @@ class EmployeeRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isStore = $this->routeIs('employees.store');
+        $requiresName = $this->routeIs('employees.store') || $this->routeIs('employees.update');
 
         return [
-            'name' => [$isStore ? 'required' : 'sometimes', 'string', 'max:255'],
+            'name' => [$requiresName ? 'required' : 'sometimes', 'string', 'max:255'],
             'active' => ['sometimes', 'boolean'],
             'profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
         ];

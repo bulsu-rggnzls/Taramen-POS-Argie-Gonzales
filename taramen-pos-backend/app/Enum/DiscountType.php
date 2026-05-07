@@ -6,5 +6,5 @@ enum DiscountType :string
 {
     case PERCENTAGE = "percentage";
     case FIXED = "fixed";
-    case B1T1 = "buy1take1";
+    case BUY1TAKE1 = "buy1take1";
 }

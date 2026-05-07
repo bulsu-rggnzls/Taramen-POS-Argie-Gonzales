@@ -51,10 +51,13 @@ class OrderRequest extends FormRequest
 
             'per_page' => [ 'sometimes', 'integer', 'min:1', 'max:100' ],
 
+            "special_request" => [ 'nullable', 'string', 'max:255' ],
+
             'items' => [ $isStore ? 'required' : 'sometimes', 'array', 'min:1' ],
             'items.*.menu_item_id' => [ $isStore ? 'required' : 'sometimes', 'integer', 'exists:menu_items,id' ],
             'items.*.quantity' => [ $isStore ? 'required' : 'sometimes', 'integer', 'min:1' ],
             'items.*.discount_id' => [ 'sometimes', 'integer', 'exists:discounts,id' ],
+
         ];
 
         return $rules;

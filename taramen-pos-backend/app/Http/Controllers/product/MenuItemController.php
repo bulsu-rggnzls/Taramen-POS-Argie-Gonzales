@@ -19,8 +19,10 @@ class MenuItemController extends Controller
      */
     public function index()
     {
+        $menuItems = $this->menuItemService->getAllItems();
+
         return ApiResponse::success(
-            MenuItem::all(),
+            $menuItems,
             'Menu items retrieved successfully'
         );
     }
@@ -113,7 +115,6 @@ class MenuItemController extends Controller
         return ApiResponse::success(
             [
                 'id' => $menuItem->id,
-                'status' => $menuItem->status,
                 'available' => $menuItem->available
             ],
             'Menu item availability toggled successfully'

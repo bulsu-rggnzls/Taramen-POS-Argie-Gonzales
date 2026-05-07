@@ -13,6 +13,7 @@ class Order extends Model
         'status',
         'subtotal',
         'total_discount',
+        'special_request',
         'total_amount',
     ];
 
@@ -38,9 +39,9 @@ class Order extends Model
         $lastOrder = self::whereDate('created_at', today())
             ->orderBy('id', 'desc')
             ->first();
-        
+
         $sequence = $lastOrder ? intval(substr($lastOrder->order_number, -4)) + 1 : 1;
-        
+
         return $date . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 

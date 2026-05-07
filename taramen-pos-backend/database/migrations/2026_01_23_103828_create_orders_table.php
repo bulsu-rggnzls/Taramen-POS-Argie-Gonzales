@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('total_discount', 10, 2)->default(0);
             $table->decimal('total_amount', 10, 2);
             $table->enum('status', ['pending', 'completed', 'cancelled'])->default('pending');
+            $table->text("special_request")->nullable();
             $table->timestamps();
 
         });

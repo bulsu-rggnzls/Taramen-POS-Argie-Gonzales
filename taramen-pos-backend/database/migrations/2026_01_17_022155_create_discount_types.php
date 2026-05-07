@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('discount_types', function (Blueprint $table) {
             $table->id();
-            $table->string("name");
+            $table->string("name")->unique();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('discount_type');
+        Schema::dropIfExists('discount_types');
     }
 };

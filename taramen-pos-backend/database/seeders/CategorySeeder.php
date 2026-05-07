@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
@@ -13,18 +12,53 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        // $items = ['ramen', 'tonkatsu', 'sushi', 'gyoza' , 'sashimi'];
-        // $description = ['long noodles', 'crispy pork', 'classic delicacy', 'fried pork dumpling', 'raw edible fish'] ;
-
-        $category_names = ['ramen', 'rice bowls', 'platters', 'drinks' ];
-        $category_descriptions = ['hot noodles', 'meals with toppings', 'good for 4', 'good for authentic dining experience' ];
-
-        foreach($category_names as $key => $name){
-            Category::create([
-                'name' => $name,
-                'description' => $category_descriptions[$key]
-
+        foreach ($this->extractCategories() as $categoryName) {
+            $category = Category::withTrashed()->firstOrNew([
+                'name' => $categoryName,
             ]);
+
+            if (!$category->exists) {
+                $category->description = null;
+            }
+
+            if ($category->trashed()) {
+                $category->restore();
+            }
+
+            $category->save();
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractCategories(): array
+    {
+        $path = base_path('../taramen_menu.md');
+
+        if (!is_file($path)) {
+            return [];
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES);
+        $categories = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            if (preg_match('/^\*\*(.+?)\*\*(.*)$/u', $line, $matches) === 1) {
+                $category = trim($matches[1] . ' ' . trim($matches[2]));
+
+                if ($category !== '' && !in_array($category, $categories, true)) {
+                    $categories[] = $category;
+                }
+            }
+        }
+
+        return $categories;
     }
 }

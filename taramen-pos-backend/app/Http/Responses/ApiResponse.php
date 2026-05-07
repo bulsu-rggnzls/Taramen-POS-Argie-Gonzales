@@ -6,6 +6,15 @@ use Illuminate\Http\JsonResponse;
 
 class ApiResponse
 {
+    private static function defaultMeta(array $meta = []): array
+    {
+        return array_merge([
+            'time' => now()->format('Y-m-d H:i:s'),
+            'api_version' => '1.0.0',
+            'request_id' => uniqid(),
+        ], $meta);
+    }
+
     public static function success(
         mixed $data = null,
         string $message = 'OK',
@@ -18,19 +27,7 @@ class ApiResponse
             'data' => $data,
         ];
 
-        $systemDefaultMeta  = [
-            "time" => now()->format('Y-m-d H:i:s'),
-            "api_version" => "1.0.0",
-            "request_id" => uniqid()
-        ];
-
-        $total_meta = array_merge($systemDefaultMeta, $meta);
-
-        if (empty($meta)) {
-            $payload['meta'] = $total_meta;
-        }else{
-            $payload['meta'] = $meta;
-        }
+        $payload['meta'] = self::defaultMeta($meta);
 
         return response()->json($payload, $status);
     }
@@ -44,25 +41,10 @@ class ApiResponse
         $payload = [
             'success' => false,
             'message' => $message,
+            'errors' => empty($errors) ? (object) [] : $errors,
         ];
 
-        $systemDefaultMeta  = [
-            "time" => now()->format('Y-m-d H:i:s'),
-            "api_version" => "1.0.0",
-            "request_id" => uniqid()
-        ];
-
-        if (!empty($errors)) {
-            $payload['errors'] = $errors;
-        }
-
-        $total_meta = array_merge($systemDefaultMeta, $meta);
-
-        if (empty($meta)) {
-            $payload['meta'] = $total_meta;
-        }else{
-            $payload['meta'] = $meta;
-        }
+        $payload['meta'] = self::defaultMeta($meta);
 
         return response()->json($payload, $status);
     }

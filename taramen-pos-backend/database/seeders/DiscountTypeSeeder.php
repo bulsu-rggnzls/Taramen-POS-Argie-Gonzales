@@ -13,12 +13,16 @@ class DiscountTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        $discount_types = ['percentage', 'fixed',"b1t1"];
+        $discount_types = ['percentage', 'fixed', 'buy1take1'];
 
         foreach ($discount_types as $discount_type) {
-            DiscountType::create([
+            $type = DiscountType::withTrashed()->firstOrCreate([
                 'name' => $discount_type,
             ]);
+
+            if ($type->trashed()) {
+                $type->restore();
+            }
         }
     }
 }

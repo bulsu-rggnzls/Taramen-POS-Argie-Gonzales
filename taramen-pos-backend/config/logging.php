@@ -129,21 +129,21 @@ return [
 
         'endpoint_success' => [
         'driver' => 'daily',
-        'path' => storage_path('logs/endpoint_success.log'),
+        'path' => storage_path('logs/success/endpoint_success.log'),
         'level' => 'info',
         'days' => 30,
         ],
 
         'endpoint_failure' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/endpoint_failure.log'),
+            'path' => storage_path('logs/failed/endpoint_failure.log'),
             'level' => 'warning',
             'days' => 60,
         ],
-        
+
         'endpoint_all' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/endpoint_all.log'),
+            'path' => storage_path('logs/all/endpoint_all.log'),
             'level' => 'debug',
             'days' => 14,
         ],
