@@ -9,27 +9,32 @@ export default function TakeOrderCategoryTabs() {
   const setField = useTakeOrderStore((state) => state.setField);
 
   return (
-    <ul className="mt-5 flex flex-nowrap gap-2 overflow-x-auto pb-2">
+    <ul className="mt-6 flex flex-nowrap gap-5 overflow-x-auto pb-2">
       {categoryTabs.map((tab) => {
         const isActive = activeCategory === tab.id;
-        const CategoryIcon = tab.icon;
 
         return (
-          <li key={tab.id}>
+          <li key={tab.id} className="w-[8.5rem] flex-none">
             <IButton
               type="button"
               variant="outline"
               showLoading={false}
               className={cn(
-                "h-9 rounded-full border px-4 text-sm font-semibold",
+                "h-12 w-[8.5rem] whitespace-normal rounded-2xl border px-3 py-2 text-center font-bold leading-tight shadow-none",
                 isActive
-                  ? "border-transparent bg-taramen-red text-white shadow-sm hover:bg-taramen-red/90"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-orange/40 hover:text-taramen-red",
+                  ? "border-black bg-taramen-red text-white hover:bg-taramen-red/90"
+                  : "border-gray-950 bg-transparent text-gray-950 hover:border-taramen-red hover:text-taramen-red",
               )}
               onClick={() => setField("activeCategory", tab.id)}
             >
-              <CategoryIcon className="size-4" />
-              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  "line-clamp-2 break-words",
+                  tab.label.length > 18 ? "text-[0.65rem]" : "text-xs",
+                )}
+              >
+                {tab.label}
+              </span>
             </IButton>
           </li>
         );

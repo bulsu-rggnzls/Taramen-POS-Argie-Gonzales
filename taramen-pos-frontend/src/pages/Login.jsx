@@ -38,7 +38,7 @@ export default function Login() {
                logo={
                   <div className="mb-4 mt-8">  
                      <img 
-                        src="/taramen.svg" 
+                        src="/taramens.svg" 
                         alt="Ta'ramen POS"
                         className="h-32 w-auto mx-auto block"
                      />        
