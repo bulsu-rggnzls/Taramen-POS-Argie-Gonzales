@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check } from "lucide-react";
 
 import MenuGridSkeleton from "@/components/custom/MenuGridSkeleton";
 import Paragraph from "@/components/custom/Paragraph";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   ITEM_ACCENTS,
   ITEM_IMAGE_POSITIONS,
-} from "@/pages/take-order/take-order-config";
+} from "@/config/take-order-config";
 import { formatCurrency } from "@/shared/helpers/takeOrder";
 import { useAvailableMenuItemsQuery } from "@/queries/useTakeOrderQueries";
 import { useDebounce } from "@/shared/hooks/useDebounce";
@@ -60,6 +61,9 @@ export default function MenuGrid() {
     return orderItems.some((orderItem) => orderItem.id === itemId);
   };
 
+  const getSelectedQty = (itemId) =>
+    orderItems.find((orderItem) => orderItem.id === itemId)?.qty ?? 0;
+
   return (
     <div className="mt-5">
       {showInitialSkeleton || menuItemsQuery.isLoading ? (
@@ -70,7 +74,7 @@ export default function MenuGrid() {
             <li
               key={item.id}
               className={cn(
-                "overflow-hidden rounded-md bg-white shadow-[0_3px_9px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]",
+                "relative overflow-hidden rounded-md bg-white shadow-[0_3px_9px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]",
                 isItemSelected(item.id) && "border-2 border-taramen-red"
               )}
             >
@@ -91,6 +95,12 @@ export default function MenuGrid() {
                       item.accent,
                     )}
                   />
+                  {isItemSelected(item.id) ? (
+                    <span className="absolute left-2 top-2 inline-flex h-7 items-center gap-1 rounded-full bg-taramen-red px-2.5 text-xs font-bold text-white shadow-sm">
+                      <Check className="size-3.5" />
+                      {getSelectedQty(item.id)}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="min-h-[3.8rem] space-y-1 px-3 py-2.5">
                   <div>
