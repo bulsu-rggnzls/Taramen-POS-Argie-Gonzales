@@ -1,5 +1,10 @@
-import { DATATABLE_SORT_KEYS } from "@/shared/constants/options";
 import { create } from "zustand";
+
+// Sort constants
+const DATATABLE_SORT_KEYS = {
+   ASC: 'asc',
+   DESC: 'desc'
+};
 
 export const useDatatableStore = create((set, get) => ({
    currentPage: 1,
