@@ -39,12 +39,18 @@ import Title from "./Title";
 import Paragraph from "./Paragraph";
 import DatePicker from "./DatePicker";
 import { Checkbox } from "@/components/ui/checkbox";
-import ICheckbox from "./Checkbox";
-import { useUser } from "@/shared/hooks/useUser";
+// import ICheckbox from "./Checkbox";
+// import { useUser } from "@/shared/hooks/useUser";
 import ITooltip from "./Tooltip";
 import Each from "./Each";
 import { Skeleton } from "../ui/skeleton";
-import { DATATABLE_SORT_KEYS } from "@/shared/constants/options";
+// import { DATATABLE_SORT_KEYS } from "@/shared/constants/options";
+
+// Sort constants
+const DATATABLE_SORT_KEYS = {
+   ASC: 'asc',
+   DESC: 'desc'
+};
 
 const DataTable = ({
    // TanStack Query integration (required)
@@ -83,8 +89,7 @@ const DataTable = ({
    onMount = () => {},
    ...props
 }) => {
-   const user = useUser();
-   const userRole = user?.role;
+   const userRole = props.userRole;
 
    // State management from store
    const {
@@ -191,22 +196,47 @@ const DataTable = ({
       }
    }, [selectedRows, onSelectionChange]);
 
+   const sortTableData = useCallback(
+      (data) => {
+         if (!sortField || !sortOrder) return data;
+         
+         return [...data].sort((a, b) => {
+            const aValue = getNestedValue(a, sortField);
+            const bValue = getNestedValue(b, sortField);
+            
+            if (aValue === null || aValue === undefined) return 1;
+            if (bValue === null || bValue === undefined) return -1;
+            
+            let comparison = 0;
+            if (aValue > bValue) comparison = 1;
+            if (aValue < bValue) comparison = -1;
+            
+            return sortOrder === DATATABLE_SORT_KEYS.DESC ? -comparison : comparison;
+         });
+      },
+      [sortField, sortOrder, getNestedValue],
+   );
+
    const paginateTableData = useCallback(
       (data) => data.slice((currentPage - 1) * effectivePageSize, currentPage * effectivePageSize),
       [currentPage, effectivePageSize],
    );
 
    const { paginationData, isQueryLoading, tableData } = useMemo(() => {
+      const sortedData = serverSide 
+         ? serverSideData?.data 
+         : sortTableData(clientSideData);
+      
       return {
          paginationData: serverSideData?.pagination || {},
          isQueryLoading: isLoading || isFetching,
          tableData: serverSide
             ? serverSideData?.data
             : paginated
-            ? paginateTableData(clientSideData)
-            : clientSideData,
+            ? paginateTableData(sortedData)
+            : sortedData,
       };
-   }, [serverSideData, isLoading, isFetching, clientSideData, paginated, paginateTableData]);
+   }, [serverSideData, isLoading, isFetching, clientSideData, paginated, paginateTableData, sortTableData]);
 
    const handleSelectAll = useCallback(
       (checked) => {
@@ -526,17 +556,21 @@ const DataTable = ({
 
                                  if (filter.type === "boolean") {
                                     return (
-                                       <ICheckbox
-                                          name={filter.key}
-                                          useForm={false}
-                                          key={filter.key}
-                                          label={filter.label}
-                                          checked={activeFilters[filter.key] || false}
-                                          labelClassName='w-max mr-2'
-                                          onCheckedChange={(checked) =>
-                                             handleFilterChange(filter.key, checked ? true : false)
-                                          }
-                                       />
+                                       <div key={filter.key} className="flex items-center space-x-2">
+                                          <Checkbox
+                                             id={filter.key}
+                                             checked={activeFilters[filter.key] || false}
+                                             onCheckedChange={(checked) =>
+                                                handleFilterChange(filter.key, checked ? true : false)
+                                             }
+                                          />
+                                          <label 
+                                             htmlFor={filter.key}
+                                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                             {filter.label}
+                                          </label>
+                                       </div>
                                     );
                                  }
 
@@ -552,7 +586,7 @@ const DataTable = ({
                                        allValue='all'
                                        contentClassName='bg-white'
                                        variant='destructive'
-                                       triggerClassName={`text-xs bg-white text-black [&>svg]:!text-black hover:bg-primary/10 ${
+                                       triggerClassName={`text-xs bg-primary text-white [&>svg]:!text-white hover:bg-primary/90 ${
                                           activeFilters[filter.key] && activeFilters[filter.key] !== "all"
                                              ? "font-semibold"
                                              : ""
@@ -636,8 +670,7 @@ const DataTable = ({
                                     {column.sortable === true && column.title !== "Actions" && (
                                        <SortIcon
                                           className={cn(
-                                             "size-4 flex-shrink-0",
-                                             isSorted ? "opacity-100" : "opacity-60",
+                                             "size-4 flex-shrink-0 text-white",
                                           )}
                                        />
                                     )}
@@ -671,7 +704,7 @@ const DataTable = ({
                         noFallback
                         render={(item, index) => (
                            <React.Fragment key={item.id || item.key || index}>
-                              <TableRow onClick={() => onRowClick?.(item)} className={onRowClick && "cursor-pointer"}>
+                              <TableRow onClick={() => onRowClick?.(item)} className={cn(onRowClick && "cursor-pointer", index % 2 === 1 && "bg-gray-200")}>
                                  <Each
                                     of={columnsWithActions}
                                     noFallback

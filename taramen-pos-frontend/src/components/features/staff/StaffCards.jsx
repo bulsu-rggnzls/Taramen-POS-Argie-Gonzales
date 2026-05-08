@@ -4,7 +4,7 @@ import { Users, Clock, Calendar, ChefHat } from "lucide-react";
 export default function StaffCards() {
   return (
     <div className="flex gap-4">
-      <Card className="flex-1 border-l-4 border-l-[#835427] shadow-sm">
+      <Card className="flex-1 bg-white border-l-4 border-l-[#835427] shadow-sm">
         <CardContent className="p-4 flex justify-between items-center">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -18,7 +18,7 @@ export default function StaffCards() {
         </CardContent>
       </Card>
 
-      <Card className="flex-1 border-l-4 border-l-[#A2CB8B] shadow-sm">
+      <Card className="flex-1 bg-white border-l-4 border-l-[#A2CB8B] shadow-sm">
         <CardContent className="p-4 flex justify-between items-center">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -32,7 +32,7 @@ export default function StaffCards() {
         </CardContent>
       </Card>
 
-      <Card className="flex-1 border-l-4 border-l-[#F7C85C] shadow-sm">
+      <Card className="flex-1 bg-white border-l-4 border-l-[#F7C85C] shadow-sm">
         <CardContent className="p-4 flex justify-between items-center">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -46,7 +46,7 @@ export default function StaffCards() {
         </CardContent>
       </Card>
 
-      <Card className="flex-1 border-l-4 border-l-[#547A95] shadow-sm">
+      <Card className="flex-1 bg-white border-l-4 border-l-[#547A95] shadow-sm">
         <CardContent className="p-4 flex justify-between items-center">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
